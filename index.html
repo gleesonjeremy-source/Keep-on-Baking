@@ -193,6 +193,7 @@
     .mslot:last-of-type{border-bottom:none;}
     .mslot-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);width:72px;flex-shrink:0;}
     .mslot-val{flex:1;font-size:14px;font-weight:700;color:var(--txt);cursor:pointer;}
+    .mslot-val.custom{color:var(--mut);font-style:italic;font-weight:400;}
     .mslot-val:active{color:var(--acc);}
     .mslot-emp{flex:1;font-size:13px;color:var(--bor);font-style:italic;}
     .s-add{width:30px;height:30px;border-radius:50%;border:1.5px dashed var(--bor);background:none;font-size:18px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -259,6 +260,7 @@
     .slot-pick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
     .slot-pick-btn{padding:12px;border-radius:10px;border:1.5px solid var(--bor);background:var(--sur);font-size:13px;font-weight:700;color:var(--txt);cursor:pointer;text-align:center;}
     .slot-pick-btn:active{background:var(--acc-lt);}
+    .slot-pick-btn.sel{background:var(--acc-lt);border-color:var(--acc);}
 
     .shop-card{margin:10px 16px 0;background:linear-gradient(135deg,#FAE8EF,#FDF5F7);border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 3px 12px rgba(140,34,82,.12);border:1.5px solid var(--bor);}
     .shop-card:active{transform:scale(.98);}
@@ -304,7 +306,7 @@
     <div class="view active" id="view-dashboard"><div id="d-body"></div></div>
     <div class="view" id="view-recipes"><div id="r-body"></div></div>
     <div class="view" id="view-calendar"><div id="c-body"></div></div>
-    <div class="view" id="view-shopping"><div id="s-body"></div></div>
+    <div class="view" id="view-grocery"><div id="g-body"></div></div>
     <div class="view" id="view-todos"><div id="t-body"></div></div>
   </div>
   <nav class="bnav">
@@ -317,7 +319,7 @@
     <button class="nbtn" data-v="calendar" onclick="nav('calendar')">
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar
     </button>
-    <button class="nbtn" data-v="shopping" onclick="nav('shopping')">
+    <button class="nbtn" data-v="grocery" onclick="nav('grocery')">
       <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Shopping
     </button>
     <button class="nbtn" data-v="todos" onclick="nav('todos')">
@@ -439,34 +441,21 @@ function initFB(){
     bakeLog=s.val()||{};
     if(document.getElementById('s-ov').classList.contains('open'))renderStarter();
   });
-  db.ref('/shopping/items').on('value',s=>{
-    shopItems=s.val()||[];
-    if(curView==='shopping'&&shopTab==='list')renderShopTab();
-  });
-  db.ref('/shopping/staples').on('value',s=>{
-    shopStaples=s.val();
-    if(!shopStaples||!shopStaples.length){db.ref('/shopping/staples').set(STAPLE_DEF);shopStaples=STAPLE_DEF;}
-    if(curView==='shopping'&&shopTab==='staples')renderShopTab();
+  db.ref('/grocery/lists').on('value',s=>{
+    groceryLists=s.val()||{};
+    if(curView==='grocery')renderGrocery();
+    if(curView==='dashboard')renderDash();
   });
   db.ref('/todos').on('value',s=>{
     todos=s.val()||{};
     if(curView==='todos')renderTodos();
     if(curView==='dashboard')renderDash();
   });
-  db.ref('/shopping/weekly').on('value',s=>{
-    const v=s.val()||{};
-    weeklyD={template:v.template||[],current:v.current||[],weekKey:v.weekKey||null};
-    // Auto-reset if new week
-    const thisWeek=getWeekDates(0)[0];
-    if(weeklyD.weekKey!==thisWeek&&weeklyD.template.length>0){
-      const fresh=weeklyD.template.map(i=>({...i,checked:false}));
+
       db.ref('/shopping/weekly').update({current:fresh,weekKey:thisWeek});
     }
-    if(curView==='shopping'&&shopTab==='weekly')renderShopTab();
   });
-  db.ref('/shopping/trips').on('value',s=>{
-    trips=s.val()||{};
-    if(curView==='shopping'&&shopTab==='trips')renderShopTab();
+
   });
 }
 function setSS(s,t){
@@ -482,21 +471,21 @@ function nav(v){
   document.querySelectorAll('.nbtn').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
   document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.id==='view-'+v));
   const fab=document.getElementById('fab');
-  fab.style.display=(v==='recipes'||v==='shopping'||v==='todos')?'flex':'none';
+  fab.style.display=(v==='recipes'||v==='grocery'||v==='todos')?'flex':'none';
   render();
 }
 function render(){
   if(curView==='dashboard')renderDash();
   else if(curView==='recipes')renderRecipes();
   else if(curView==='calendar')renderCalendar();
-  else if(curView==='shopping')renderShopping();
+  else if(curView==='grocery')renderGrocery();
   else if(curView==='todos')renderTodos();
 }
 function fabAct(){
   if(curView==='recipes'){
     if(rTab==='recipes')openRecipeForm(null);
     else openIdeaForm(null);
-  } else if(curView==='shopping'){
+  } else if(curView==='grocery'){
     if(shopTab==='trips')openNewTripModal();
     else if(shopTab==='weekly')openAddWeeklyItem();
     else openAddItemModal();
@@ -563,13 +552,21 @@ function renderDash(){
   const wkHtml=getWeekDates(0).map(ds=>{
     const d=new Date(ds+'T12:00:00'),isT=ds===today;
     const day=calD[ds]||{};
-    const meals=SLOTS.filter(s=>day[s.id]).map(s=>{const m=getMealDisplay(day[s.id]);return m?m.name:null;}).filter(Boolean);
     const sde=day.sourdough;
+    const mealsHtml=SLOTS.map(slot=>{
+      const v=day[slot.id];if(!v)return'';
+      const m=getMealDisplay(v);if(!m)return'';
+      return`<div style="display:flex;align-items:center;gap:4px;padding:1px 0">
+        <span style="font-size:10px;color:var(--mut);font-weight:700;text-transform:uppercase;width:50px;flex-shrink:0">${slot.label.slice(0,5)}</span>
+        <span style="flex:1;font-size:13px;font-weight:700;color:${m.isCustom?'var(--mut)':'var(--txt)'};font-style:${m.isCustom?'italic':'normal'};cursor:pointer" onclick="editDashMeal('${ds}','${slot.id}')">${esc(m.name)}</span>
+        <button onclick="editDashMeal('${ds}','${slot.id}')" style="background:none;border:none;font-size:12px;cursor:pointer;color:var(--mut);padding:2px">✏️</button>
+      </div>`;
+    }).join('');
     return `<div class="wk-row">
       <span class="wk-day ${isT?'tod':''}">${d.toLocaleDateString('en',{weekday:'short'})}</span>
       <div style="flex:1;min-width:0">
-        ${sde?`<div style="font-size:12px;color:#8B4513;font-weight:700">${sde.emoji} ${sde.label}</div>`:''}
-        ${meals.length?`<div style="font-size:14px;color:var(--txt)">${meals.join(' · ')}</div>`:(!sde?`<div style="font-size:13px;color:var(--bor);font-style:italic">—</div>`:'')}
+        ${sde?`<div style="font-size:12px;color:#8B4513;font-weight:700;padding:2px 0">${sde.emoji} ${sde.label}</div>`:''}
+        ${mealsHtml||(!sde?`<div style="font-size:13px;color:var(--bor);font-style:italic">—</div>`:'')}
       </div>
       <button class="wk-add" onclick="quickAddMeal('${ds}')" title="Add meal">+</button>
     </div>`;
@@ -643,7 +640,7 @@ function openShoppingCard(){
     </button>
     ${activeItems>0?`<div style="margin-top:4px;padding:12px 14px;background:var(--acc-lt);border-radius:12px;display:flex;align-items:center;justify-content:space-between">
       <span style="font-size:14px;color:var(--pri);font-weight:700">Current list: ${activeItems} item${activeItems!==1?'s':''} remaining</span>
-      <button onclick="nav('shopping');closeModal()" style="border:none;background:none;font-size:13px;font-weight:700;color:var(--acc);cursor:pointer">View →</button>
+      <button onclick="nav('grocery');closeModal()" style="border:none;background:none;font-size:13px;font-weight:700;color:var(--acc);cursor:pointer">View →</button>
     </div>`:''}
     <div style="height:8px"></div>
   `;
@@ -654,25 +651,27 @@ function openNewListFromDash(){
   if(shopItems.length>0){
     if(!confirm('Start a fresh list? Your current list ('+(shopItems.length)+' items) will be cleared.'))return;
   }
-  db.ref('/shopping/items').set([]);
   closeModal();
-  nav('shopping');
+  nav('grocery');
+  setTimeout(openNewGListModal, 300);
 }
 
 function openWeeklyListFromDash(){
   closeModal();
   genFromCal();
-  nav('shopping');
+  nav('grocery');
 }
 
 function openTripListFromDash(){
   closeModal();
   setTimeout(()=>{
     shopTab='trips';
-    nav('shopping');
+    nav('grocery');
     setTimeout(()=>openNewTripModal(),300);
   },250);
 }
+
+function editDashMeal(ds,slot){openSlotPicker(ds,slot,true);}
 
 function quickAddMeal(ds){
   // Step 1: pick meal slot
@@ -709,12 +708,14 @@ function renderRTab(){
     const all=Object.entries(recipes);
     const filtered=all.filter(([,r])=>{
       if(rFilt==='favorites')return r.favorite;
+      if(rFilt==='bakery')return r.bakeryMode;
       return rFilt==='all'||r.category===rFilt;
     });
     el.innerHTML=`
       <div class="fbar">
         <button class="fchip ${rFilt==='all'?'active':''}" onclick="setFilt('all')">All (${all.length})</button>
         <button class="fchip ${rFilt==='favorites'?'active':''}" onclick="setFilt('favorites')">❤️ Favorites</button>
+        <button class="fchip ${rFilt==='bakery'?'active':''}" onclick="setFilt('bakery')">🏪 Bakery</button>
         ${CATS.map(c=>{const n=all.filter(([,r])=>r.category===c.id).length;return n>0?`<button class="fchip ${rFilt===c.id?'active':''}" onclick="setFilt('${c.id}')">${c.emoji} ${c.label}</button>`:''}).join('')}
       </div>
       ${filtered.length
@@ -907,8 +908,20 @@ function doAddToShop(){
   const el=document.getElementById('add-sv');
   const cur=el?parseInt(el.textContent)||r.servings||4:r.servings||4;
   const factor=cur/(r.servings||4);
-  db.ref('/shopping/items').set([...shopItems,...(r.ingredients||[]).filter(i=>i.name).map(i=>({name:i.name,qty:scaleQ(i.qty,factor),checked:false,source:r.name}))]);
-  closeModal();nav('shopping');
+  // Add to first available grocery list or create one
+  const listIds=Object.keys(groceryLists);
+  if(listIds.length>0){
+    const targetId=listIds[0];
+    const existing=(groceryLists[targetId]?.items)||[];
+    const ni=(r.ingredients||[]).filter(i=>i.name).map(i=>({name:i.name,qty:scaleQ(i.qty,factor),checked:false,source:r.name}));
+    db.ref('/grocery/lists/'+targetId+'/items').set([...existing,...ni]);
+    db.ref('/grocery/lists/'+targetId+'/updatedAt').set(new Date().toISOString());
+  } else {
+    const id='gl_'+Date.now();
+    const ni=(r.ingredients||[]).filter(i=>i.name).map(i=>({name:i.name,qty:scaleQ(i.qty,factor),checked:false,source:r.name}));
+    db.ref('/grocery/lists/'+id).set({name:r.name+' Ingredients',color:'green',emoji:'🍽️',items:ni,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),pinned:false,shopping:false});
+  }
+  closeModal();nav('grocery');
 }
 
 // ============================================================
@@ -1000,6 +1013,7 @@ async function saveRF(){
   if(!rFormCat){alert('Please select a category.');return;}
   const notes=document.getElementById('rnotes').value.trim();
   const rot=document.getElementById('rrot').checked;
+  const bakeryMode=document.getElementById('rbakery')?.checked||false;
   const ingredients=[];
   document.querySelectorAll('#ilist .ir').forEach(row=>{
     const q=row.querySelector('.iq').value.trim();
@@ -1020,7 +1034,7 @@ async function saveRF(){
     }catch(err){console.error(err);alert('Photo upload failed — saved without photo.');}
     pendingPhoto=null;
   }
-  const data={name,category:rFormCat,notes,ingredients,servings:rFormServ,regularRotation:rot,favorite:!!(editingRid&&recipes[editingRid]?.favorite),photoURL:photoURL||null,updatedAt:new Date().toISOString()};
+  const data={name,category:rFormCat,notes,ingredients,servings:rFormServ,regularRotation:rot,bakeryMode,favorite:!!(editingRid&&recipes[editingRid]?.favorite),photoURL:photoURL||null,updatedAt:new Date().toISOString()};
   if(!editingRid)data.createdAt=new Date().toISOString();
   await db.ref('/recipes/'+rid).update(data);
   closeModal();
@@ -1116,6 +1130,39 @@ function deleteIdea(id){
   db.ref('/ideas/'+id).remove();closeModal();
 }
 
+
+// MOVE MEAL
+let _moveMeal=null,_moveSlot=null,_moveVal=null;
+function openMoveMeal(ds,slot){
+  _moveMeal=ds;_moveSlot=slot;_moveVal=calD[ds]?.[slot];
+  const meal=getMealDisplay(_moveVal);
+  const dates=getWeekDates(wkOff);const today=fmtD(new Date());
+  document.getElementById('m-title').textContent='📅 Move "'+esc(meal?.name||'meal')+'"';
+  document.getElementById('m-body').innerHTML=`
+    <p style="font-size:13px;color:var(--mut);margin-bottom:12px">Move to which day?</p>
+    <div class="day-pick-grid">
+      ${dates.filter(d=>d!==ds).map(d2=>{const dobj=new Date(d2+'T12:00:00'),isT=d2===today;return`<button class="day-pick-btn ${isT?'today-d':''}" onclick="pickMoveDay('${d2}')"><div>${dobj.toLocaleDateString('en',{weekday:'short'})}</div><div style="font-size:10px;opacity:.7">${dobj.toLocaleDateString('en',{month:'short',day:'numeric'})}</div></button>`;}).join('')}
+    </div>
+    <p style="font-size:13px;color:var(--mut);margin-bottom:8px;margin-top:4px">To which slot?</p>
+    <div class="slot-pick-grid" id="move-slots">
+      ${SLOTS.map(s=>`<button class="slot-pick-btn ${s.id===slot?'sel':''}" id="mvs_${s.id}" onclick="pickMoveSlot('${s.id}')">${s.label}</button>`).join('')}
+    </div>
+    <div style="height:8px"></div>`;
+  window._selMoveSlot=slot;
+  showModal();
+}
+function pickMoveSlot(s){
+  window._selMoveSlot=s;
+  SLOTS.forEach(sl=>{const el=document.getElementById('mvs_'+sl.id);if(el){el.style.background='';el.style.borderColor='';}});
+  const el=document.getElementById('mvs_'+s);if(el){el.style.background='var(--acc-lt)';el.style.borderColor='var(--acc)';}
+}
+function pickMoveDay(targetDs){
+  const targetSlot=window._selMoveSlot||_moveSlot;
+  db.ref('/calendar/'+targetDs+'/'+targetSlot).set(_moveVal);
+  db.ref('/calendar/'+_moveMeal+'/'+_moveSlot).remove();
+  closeModal();
+}
+
 // ============================================================
 // CALENDAR
 // ============================================================
@@ -1149,7 +1196,7 @@ function dCardHtml(ds){
           :`<span class="mslot-val" onclick="openRecipeDetail('${meal.id}')">${esc(meal.name)}</span>
              <button class="s-rm" onclick="rmSlot('${ds}','${slot.id}')">×</button>`)
         :`<span class="mslot-emp">—</span>
-           <button class="s-add" onclick="openSlotPicker('${ds}','${slot.id}')">+</button>`
+           <button class="s-add" onclick="openSlotPicker('${ds}','${slot.id}',false)">+</button>`
       }
     </div>`;
   }).join('');
@@ -1174,12 +1221,14 @@ function rmSlot(ds,slot){db.ref('/calendar/'+ds+'/'+slot).remove();}
 
 function getMealDisplay(v){
   if(!v)return null;
-  if(String(v).startsWith('custom:'))return{name:v.slice(7),isCustom:true};
+  if(String(v).startsWith('custom:'))return{name:v.slice(7),isCustom:true,id:null};
   const r=recipes[v];
-  return r?{name:r.name,isCustom:false,id:v}:null;
+  if(r)return{name:r.name,isCustom:false,id:v};
+  if(String(v).startsWith('r_'))return{name:'Loading...',isCustom:false,id:v};
+  return null;
 }
 
-function openSlotPicker(ds,slot){
+function openSlotPicker(ds,slot,isEdit){
   const slotDef=SLOTS.find(s=>s.id===slot);
   const allowed=slotDef?slotDef.cats:[];
   const filtered=Object.entries(recipes).filter(([,r])=>allowed.includes(r.category));
@@ -1192,6 +1241,7 @@ function openSlotPicker(ds,slot){
         <button class="btn btn-p" onclick="addCustomMeal('${ds}','${slot}')">Add</button>
       </div>
     </div>
+    ${isEdit?`<button class="btn btn-d btn-full" onclick="rmSlot('${ds}','${slot}')" style="margin-bottom:14px">🗑️ Remove this meal</button>`:''}
     <div style="border-top:1px solid var(--bor);padding-top:14px">
       <p class="fl" style="margin-bottom:10px">Or choose from your recipes:</p>
       ${filtered.length
@@ -1226,492 +1276,279 @@ function assignSlot(ds,slot,rid){db.ref('/calendar/'+ds+'/'+slot).set(rid);close
 // ============================================================
 // SHOPPING
 // ============================================================
-function renderShopping(){
-  const el=document.getElementById('s-body');
-  const unc=shopItems.filter(i=>!i.checked).length;
-  const wkUnc=(weeklyD.current||[]).filter(i=>!i.checked).length;
-  const tripCount=Object.keys(trips).length;
+// ============================================================
+// GROCERY V2
+// ============================================================
+const GLIST_EMOJIS=['🛒','🏠','🚗','🎉','🍰','🥦','🧴','💊','🌿','🐾','🏋️','🎓','✈️','🏕️','🎁','🍷'];
+const GLIST_COLORS=[
+  {id:'pink',bg:'#F5D0DC',txt:'#8B2252'},{id:'rose',bg:'#FAE8EF',txt:'#C85480'},
+  {id:'purple',bg:'#E8D5F5',txt:'#5B2C8B'},{id:'blue',bg:'#D5E8F5',txt:'#1A5276'},
+  {id:'teal',bg:'#D5F0EE',txt:'#1A6B65'},{id:'green',bg:'#D5F5E3',txt:'#1E8449'},
+  {id:'yellow',bg:'#FDFBE8',txt:'#7D6608'},{id:'orange',bg:'#F5E8D5',txt:'#8B4513'},
+];
+let newGColor='pink',newGEmoji='🛒',activeGListId=null;
+
+function renderGrocery(){
+  const el=document.getElementById('g-body');if(!el)return;
+  const lists=Object.entries(groceryLists).sort((a,b)=>{
+    const ap=(a[1].pinned?2:0)+(a[1].shopping?1:0);
+    const bp=(b[1].pinned?2:0)+(b[1].shopping?1:0);
+    return bp-ap||(b[1].updatedAt||'').localeCompare(a[1].updatedAt||'');
+  });
+  const activeShop=lists.find(([,l])=>l.shopping);
   el.innerHTML=`
-    <div class="shop-tabs">
-      <button class="stab ${shopTab==='list'?'active':''}" onclick="setShopTab('list')">🛒 My List (${unc})</button>
-      <button class="stab ${shopTab==='weekly'?'active':''}" onclick="setShopTab('weekly')">📋 Weekly (${wkUnc})</button>
-      <button class="stab ${shopTab==='trips'?'active':''}" onclick="setShopTab('trips')">✈️ Trips (${tripCount})</button>
-      <button class="stab ${shopTab==='staples'?'active':''}" onclick="setShopTab('staples')">📦 Staples</button>
+    ${activeShop?`<div style="background:var(--ok);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div><div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:600">🛒 Shopping: ${esc(activeShop[1].name)}</div>
+      <div style="font-size:12px;opacity:.85">${(activeShop[1].items||[]).filter(i=>!i.checked).length} items remaining</div></div>
+      <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openGList('${activeShop[0]}')">Open →</button>
+    </div>`:''}
+    <div style="padding:12px 16px 4px;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--pri)">My Lists</div>
+      <span style="font-size:13px;color:var(--mut)">${lists.length} list${lists.length!==1?'s':''}</span>
     </div>
-    <div id="stab-body"></div>
-  `;
-  renderShopTab();
-}
-
-function setShopTab(t){shopTab=t;renderShopping();}
-
-function renderShopTab(){
-  const el=document.getElementById('stab-body');if(!el)return;
-  if(shopTab==='weekly'){
-    const items=weeklyD.current||[];
-    const tmpl=weeklyD.template||[];
-    const unc=items.filter(i=>!i.checked);
-    const chk=items.filter(i=>i.checked);
-    el.innerHTML=`
-      <div style="padding:12px 16px;background:var(--sur);border-bottom:1.5px solid var(--bor)">
-        <p style="font-size:13px;color:var(--mut);margin-bottom:10px">Your regular weekly items — resets every Sunday 🌸</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-pri btn-sm" onclick="genFromCal();setShopTab('list')">📅 Merge with meal plan → My List</button>
-          <button class="btn btn-s btn-sm" onclick="openCombineModal('weekly')">➕ Combine lists</button>
-          <button class="btn btn-s btn-sm" onclick="openEditWeeklyTemplate()">✏️ Edit template</button>
-        </div>
-      </div>
-      ${!items.length
-        ?`<div class="empty"><div class="ei">📋</div><p>No weekly items yet.<br>Tap "Edit template" to set up<br>your regular weekly groceries!</p></div>`
-        :`<div class="slist">
-            ${unc.map(item=>weeklyItemHtml(item,items.indexOf(item))).join('')}
-            ${chk.length?`<div style="padding:10px 0 4px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.6px">Got it ✓ (${chk.length})</div>
-            ${chk.map(item=>weeklyItemHtml(item,items.indexOf(item))).join('')}`:''}
-          </div>`
-      }
-      <div style="height:16px"></div>
-    `;
-    return;
-  }
-  if(shopTab==='list'){
-    const unc=shopItems.filter(i=>!i.checked);
-    const chk=shopItems.filter(i=>i.checked);
-    el.innerHTML=`
-      <div style="padding:12px 16px;background:var(--sur);border-bottom:1.5px solid var(--bor);display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-pri btn-sm" onclick="genFromCal()">📅 Generate from this week</button>
-        <button class="btn btn-s btn-sm" onclick="openAddItemModal()">+ Add item</button>
-        <button class="btn btn-s btn-sm" onclick="openCombineModal('list')">➕ Combine</button>
-        ${chk.length?`<button class="btn btn-s btn-sm" onclick="clearChk()">Clear got it (${chk.length})</button>`:''}
-      </div>
-      ${!shopItems.length
-        ?`<div class="empty"><div class="ei">🛒</div><p>Your list is empty.<br>Generate from your meal plan or add items manually.</p></div>`
-        :`<div class="slist">
-            ${unc.map(item=>sItemHtml(item,shopItems.indexOf(item))).join('')}
-            ${chk.length?`<div style="padding:10px 0 4px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.6px">Got it ✓ (${chk.length})</div>
-            ${chk.map(item=>sItemHtml(item,shopItems.indexOf(item))).join('')}`:''}
-          </div>`
-      }
-      <div style="height:16px"></div>
-    `;
-  } else if(shopTab==='trips'){
-    const tripList=Object.entries(trips).sort((a,b)=>(b[1].createdAt||'').localeCompare(a[1].createdAt||''));
-    el.innerHTML=`
-      <div style="padding:12px 16px;background:var(--sur);border-bottom:1.5px solid var(--bor)">
-        <p style="font-size:13px;color:var(--mut);margin-bottom:10px">Separate shopping lists for trips, holidays, or special occasions</p>
-        <button class="btn btn-p btn-sm" onclick="openNewTripModal()">+ New Trip List</button>
-      </div>
-      ${tripList.length
-        ?`<div style="padding:12px 0">${tripList.map(([id,t])=>`
-            <div class="trip-card" onclick="openTrip('${id}')">
-              <div>
-                <div class="trip-name">${esc(t.name)}</div>
-                <div class="trip-meta">${(t.items||[]).length} items · ${(t.items||[]).filter(i=>i.checked).length} got it</div>
-              </div>
-              <div style="display:flex;gap:8px;align-items:center">
-                <span style="font-size:24px">✈️</span>
-                <button class="btn btn-d btn-sm" onclick="deleteTrip(event,'${id}')">🗑️</button>
-              </div>
-            </div>`).join('')}</div>`
-        :`<div class="empty"><div class="ei">✈️</div><p>No trip lists yet.<br>Perfect for vacation grocery runs,<br>holiday meals, camping trips!</p></div>`
-      }
-      <div style="height:16px"></div>
-    `;
-  } else {
-    el.innerHTML=`
-      <div style="padding:12px 16px;background:var(--sur);border-bottom:1.5px solid var(--bor)">
-        <p style="font-size:13px;color:var(--mut);margin-bottom:10px">Check what you need → Add to My List</p>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-p btn-sm" onclick="addStaplesToList()">+ Add checked to My List</button>
-          <button class="btn btn-s btn-sm" onclick="openAddStapleModal()">+ New staple</button>
-        </div>
-      </div>
-      <div class="slist">${shopStaples.map((item,idx)=>stapleHtml(item,idx)).join('')}</div>
-      <div style="height:16px"></div>
-    `;
-  }
-}
-
-function sItemHtml(item,idx){
-  return `<div class="sitem">
-    <button class="schk ${item.checked?'done':''}" onclick="togShop(${idx})">${item.checked?'✓':''}</button>
-    <div style="flex:1;min-width:0">
-      <div class="sname ${item.checked?'done':''}">${esc(item.name)}</div>
-      ${item.source?`<div class="ssrc">from ${esc(item.source)}</div>`:''}
-    </div>
-    <span class="sqty">${esc(item.qty||'')}</span>
-    <button class="sdel" onclick="delShop(${idx})">×</button>
-  </div>`;
-}
-
-function stapleHtml(item,idx){
-  return `<div class="sitem">
-    <button class="schk ${item.checked?'done':''}" onclick="togStaple(${idx})">${item.checked?'✓':''}</button>
-    <span class="sname ${item.checked?'done':''}" style="flex:1">${esc(item.name)}</span>
-    <button class="sdel" onclick="delStaple(${idx})">×</button>
-  </div>`;
-}
-
-function togShop(idx){const it=[...shopItems];it[idx]={...it[idx],checked:!it[idx].checked};db.ref('/shopping/items').set(it);}
-function delShop(idx){db.ref('/shopping/items').set(shopItems.filter((_,i)=>i!==idx));}
-function clearChk(){db.ref('/shopping/items').set(shopItems.filter(i=>!i.checked));}
-function togStaple(idx){const s=[...shopStaples];s[idx]={...s[idx],checked:!s[idx].checked};db.ref('/shopping/staples').set(s);}
-function delStaple(idx){
-  if(!confirm('Remove "'+shopStaples[idx].name+'" from staples?'))return;
-  db.ref('/shopping/staples').set(shopStaples.filter((_,i)=>i!==idx));
-}
-function addStaplesToList(){
-  const toAdd=shopStaples.filter(s=>s.checked);
-  if(!toAdd.length){alert('Check some staples first.');return;}
-  db.ref('/shopping/items').set([...shopItems,...toAdd.map(s=>({name:s.name,qty:'',checked:false,source:'Staples'}))]);
-  db.ref('/shopping/staples').set(shopStaples.map(s=>({...s,checked:false})));
-  setShopTab('list');
-}
-
-function openAddItemModal(){
-  document.getElementById('m-title').textContent='+ Add Item';
-  document.getElementById('m-body').innerHTML=`
-    <div class="fg"><label class="fl">Item Name</label><input type="text" class="fi" id="ni-name" placeholder="e.g. Sourdough flour"></div>
-    <div class="fg"><label class="fl">Quantity (optional)</label><input type="text" class="fi" id="ni-qty" placeholder="e.g. 2 lbs"></div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
-      <button class="btn btn-p" onclick="doAddItem()" style="flex:1">Add to List</button>
-    </div>
-  `;
-  showModal();
-  setTimeout(()=>document.getElementById('ni-name')?.focus(),300);
-}
-
-function doAddItem(){
-  const name=document.getElementById('ni-name').value.trim();
-  if(!name){alert('Enter an item name.');return;}
-  const qty=document.getElementById('ni-qty').value.trim();
-  db.ref('/shopping/items').set([...shopItems,{name,qty,checked:false,source:''}]);
-  closeModal();
-}
-
-function openAddStapleModal(){
-  document.getElementById('m-title').textContent='+ New Staple';
-  document.getElementById('m-body').innerHTML=`
-    <div class="fg"><label class="fl">Staple Item</label><input type="text" class="fi" id="ns-name" placeholder="e.g. Coconut oil"></div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
-      <button class="btn btn-p" onclick="doAddStaple()" style="flex:1">Add Staple</button>
-    </div>
-  `;
-  showModal();
-}
-
-function doAddStaple(){
-  const name=document.getElementById('ns-name').value.trim();
-  if(!name){alert('Enter an item name.');return;}
-  db.ref('/shopping/staples').set([...shopStaples,{name,qty:'',checked:false}]);
-  closeModal();
-}
-
-function genFromCal(){
-  const dates=getWeekDates(0);
-  const ingMap={};
-  dates.forEach(ds=>{
-    const day=calD[ds]||{};
-    SLOTS.forEach(slot=>{
-      const rid=day[slot.id];if(!rid)return;
-      const r=recipes[rid];if(!r||!r.ingredients)return;
-      r.ingredients.forEach(i=>{
-        const key=i.name.toLowerCase().trim();
-        if(!ingMap[key])ingMap[key]={name:i.name,qtys:[],source:r.name};
-        if(i.qty)ingMap[key].qtys.push(i.qty);
-      });
-    });
-  });
-  const gen=Object.values(ingMap).map(i=>({name:i.name,qty:i.qtys.join(' + ')||'',checked:false,source:'Meal plan'}));
-  if(!gen.length){alert('No meals planned this week yet. Add recipes to the calendar first!');return;}
-  const exMap={};shopItems.forEach(i=>{exMap[i.name.toLowerCase()]=i.checked;});
-  gen.forEach(i=>{if(exMap[i.name.toLowerCase()])i.checked=true;});
-  const manual=shopItems.filter(i=>i.source!=='Meal plan');
-  db.ref('/shopping/items').set([...manual,...gen]);
-}
-
-// WEEKLY LIST
-function weeklyItemHtml(item,idx){
-  return `<div class="sitem">
-    <button class="schk ${item.checked?'done':''}" onclick="togWeekly(${idx})">${item.checked?'✓':''}</button>
-    <span class="sname ${item.checked?'done':''}" style="flex:1">${esc(item.name)}</span>
-    <span class="sqty">${esc(item.qty||'')}</span>
-    <button class="sdel" onclick="delWeeklyItem(${idx})">×</button>
-  </div>`;
-}
-
-function togWeekly(idx){
-  const items=[...(weeklyD.current||[])];
-  items[idx]={...items[idx],checked:!items[idx].checked};
-  db.ref('/shopping/weekly/current').set(items);
-}
-
-function delWeeklyItem(idx){
-  const items=(weeklyD.current||[]).filter((_,i)=>i!==idx);
-  db.ref('/shopping/weekly/current').set(items);
-}
-
-function openAddWeeklyItem(){
-  document.getElementById('m-title').textContent='+ Add to Weekly List';
-  document.getElementById('m-body').innerHTML=`
-    <div class="fg"><label class="fl">Item</label><input type="text" class="fi" id="wi-name" placeholder="e.g. Greek yogurt"></div>
-    <div class="fg"><label class="fl">Quantity (optional)</label><input type="text" class="fi" id="wi-qty" placeholder="e.g. 2 lbs"></div>
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      <input type="checkbox" id="wi-tmpl" style="width:18px;height:18px;accent-color:var(--acc)">
-      <label for="wi-tmpl" style="font-size:14px;color:var(--txt);cursor:pointer">Also add to my weekly template</label>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
-      <button class="btn btn-p" onclick="doAddWeeklyItem()" style="flex:1">Add</button>
-    </div>
-  `;
-  showModal();
-  setTimeout(()=>document.getElementById('wi-name')?.focus(),300);
-}
-
-function doAddWeeklyItem(){
-  const name=document.getElementById('wi-name').value.trim();
-  if(!name){alert('Enter an item name.');return;}
-  const qty=document.getElementById('wi-qty').value.trim();
-  const addToTmpl=document.getElementById('wi-tmpl').checked;
-  const newCurrent=[...(weeklyD.current||[]),{name,qty,checked:false}];
-  db.ref('/shopping/weekly/current').set(newCurrent);
-  if(addToTmpl){
-    const newTmpl=[...(weeklyD.template||[]),{name,qty}];
-    db.ref('/shopping/weekly/template').set(newTmpl);
-  }
-  closeModal();
-}
-
-function openEditWeeklyTemplate(){
-  const tmpl=weeklyD.template||[];
-  document.getElementById('m-title').textContent='✏️ Edit Weekly Template';
-  document.getElementById('m-body').innerHTML=`
-    <p style="font-size:13px;color:var(--mut);margin-bottom:14px">These items auto-load every Sunday when your weekly list resets.</p>
-    <div id="tmpl-list">
-      ${tmpl.map((item,idx)=>`<div class="sitem">
-        <span class="sname" style="flex:1">${esc(item.name)}</span>
-        <span class="sqty">${esc(item.qty||'')}</span>
-        <button class="sdel" onclick="delTmplItem(${idx})">×</button>
-      </div>`).join('')}
-    </div>
-    <div style="display:flex;gap:8px;margin-top:14px">
-      <input type="text" class="fi" id="tmpl-new-name" placeholder="Add item to template..." style="flex:1;font-size:14px">
-      <input type="text" class="fi" id="tmpl-new-qty" placeholder="Qty" style="width:70px;font-size:14px">
-      <button class="btn btn-p" onclick="addTmplItem()">+</button>
-    </div>
-    <button class="btn btn-s btn-full" onclick="closeModal()" style="margin-top:12px">Done</button>
-  `;
-  showModal();
-}
-
-function delTmplItem(idx){
-  const tmpl=(weeklyD.template||[]).filter((_,i)=>i!==idx);
-  db.ref('/shopping/weekly/template').set(tmpl);
-  // Re-render template list in modal
-  const list=document.getElementById('tmpl-list');
-  if(list) list.innerHTML=tmpl.map((item,i)=>`<div class="sitem">
-    <span class="sname" style="flex:1">${esc(item.name)}</span>
-    <span class="sqty">${esc(item.qty||'')}</span>
-    <button class="sdel" onclick="delTmplItem(${i})">×</button>
-  </div>`).join('');
-}
-
-function addTmplItem(){
-  const name=document.getElementById('tmpl-new-name').value.trim();
-  if(!name){alert('Enter an item name.');return;}
-  const qty=document.getElementById('tmpl-new-qty').value.trim();
-  const tmpl=[...(weeklyD.template||[]),{name,qty}];
-  db.ref('/shopping/weekly/template').set(tmpl);
-  const newCurrent=[...(weeklyD.current||[]),{name,qty,checked:false}];
-  db.ref('/shopping/weekly/current').set(newCurrent);
-  document.getElementById('tmpl-new-name').value='';
-  document.getElementById('tmpl-new-qty').value='';
-}
-
-// COMBINE LISTS
-function openCombineModal(targetTab){
-  const opts=[];
-  if(targetTab!=='list'&&shopItems.length>0)opts.push({key:'mylist',label:'🛒 My List',count:shopItems.filter(i=>!i.checked).length,items:shopItems.filter(i=>!i.checked)});
-  if(targetTab!=='weekly'&&(weeklyD.current||[]).length>0)opts.push({key:'weekly',label:'📋 Weekly List',count:(weeklyD.current||[]).filter(i=>!i.checked).length,items:(weeklyD.current||[]).filter(i=>!i.checked)});
-  if(shopStaples.filter(i=>i.checked).length>0)opts.push({key:'staples',label:'📦 Checked Staples',count:shopStaples.filter(i=>i.checked).length,items:shopStaples.filter(i=>i.checked)});
-  Object.entries(trips).forEach(([id,t])=>{
-    const unc=(t.items||[]).filter(i=>!i.checked);
-    if(unc.length>0)opts.push({key:'trip_'+id,label:'✈️ '+t.name,count:unc.length,items:unc});
-  });
-  Object.entries(todos).forEach(([id,t])=>{
-    const unc=(t.items||[]).filter(i=>!i.checked);
-    if(unc.length>0)opts.push({key:'todo_'+id,label:'✅ '+t.name,count:unc.length,items:unc});
-  });
-
-  combineSelections=[];
-  document.getElementById('m-title').textContent='➕ Combine Lists';
-  document.getElementById('m-body').innerHTML=`
-    <p style="font-size:13px;color:var(--mut);margin-bottom:14px">Select lists to add into ${targetTab==='weekly'?'your Weekly List':'My List'}:</p>
-    ${!opts.length
-      ?`<div style="text-align:center;color:var(--mut);padding:24px 0">No other lists with items to combine.</div>`
-      :`<div class="combine-pick" id="combine-opts">
-          ${opts.map(opt=>`<div class="combine-opt" id="co_${opt.key}" onclick="toggleCombineOpt('${opt.key}')">
-            <span style="font-size:20px">${opt.label.split(' ')[0]}</span>
-            <div style="flex:1">
-              <div style="font-weight:700;font-size:15px;color:var(--txt)">${opt.label.replace(/^[^ ]+ /,'')}</div>
-              <div style="font-size:12px;color:var(--mut)">${opt.count} item${opt.count!==1?'s':''}</div>
-            </div>
-          </div>`).join('')}
-        </div>
-        <button class="btn btn-p btn-full" onclick="doCombine('${targetTab}')" style="margin-top:16px">Combine Selected</button>`
+    ${!lists.length
+      ?`<div class="empty"><div class="ei">🛒</div><p>No lists yet.<br>Tap + to create your first!<br><br><span style="font-size:13px">🏠 Pantry &nbsp;🚗 Costco &nbsp;🎉 Party</span></p></div>`
+      :`<div style="padding:8px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">${lists.map(([id,l])=>glistTileHtml(id,l)).join('')}</div>`
     }
-    <div style="height:8px"></div>
-  `;
-  // Store opts for later
-  window._combineOpts=opts;
-  showModal();
+    <div style="height:16px"></div>`;
 }
 
-function toggleCombineOpt(key){
-  const el=document.getElementById('co_'+key);
-  if(!el)return;
-  const idx=combineSelections.indexOf(key);
-  if(idx>=0){combineSelections.splice(idx,1);el.classList.remove('sel');}
-  else{combineSelections.push(key);el.classList.add('sel');}
-}
-
-function doCombine(targetTab){
-  if(!combineSelections.length){alert('Select at least one list.');return;}
-  const opts=window._combineOpts||[];
-  const toAdd=[];
-  combineSelections.forEach(key=>{
-    const opt=opts.find(o=>o.key===key);
-    if(opt)opt.items.forEach(i=>toAdd.push({name:i.name||i.text||'',qty:i.qty||'',checked:false,source:opt.label.replace(/^[^ ]+ /,'')}));
-  });
-  if(targetTab==='weekly'){
-    db.ref('/shopping/weekly/current').set([...(weeklyD.current||[]),...toAdd]);
-  } else {
-    db.ref('/shopping/items').set([...shopItems,...toAdd]);
-  }
-  closeModal();
-}
-
-// TRIPS
-function openNewTripModal(){
-  document.getElementById('m-title').textContent='✈️ New Trip List';
-  document.getElementById('m-body').innerHTML=`
-    <div class="fg"><label class="fl">Trip Name</label><input type="text" class="fi" id="trip-name" placeholder="e.g. Lake Tahoe Weekend, Thanksgiving, Camping"></div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
-      <button class="btn btn-p" onclick="doNewTrip()" style="flex:1">Create List</button>
+function glistTileHtml(id,l){
+  const c=GLIST_COLORS.find(c=>c.id===l.color)||GLIST_COLORS[0];
+  const unc=(l.items||[]).filter(i=>!i.checked).length;
+  const tot=(l.items||[]).length;
+  return`<div style="border-radius:16px;padding:14px;cursor:pointer;position:relative;box-shadow:0 2px 10px rgba(140,34,82,.1);min-height:100px;display:flex;flex-direction:column;justify-content:space-between;background:${c.bg};${l.shopping?'box-shadow:0 3px 14px rgba(107,158,112,.4);outline:2px solid #6B9E70;':''}" onclick="openGList('${id}')" ontouchend="">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:26px">${l.emoji||'🛒'}</span>
+      ${l.pinned?`<span style="font-size:13px">📌</span>`:''}
+      ${l.shopping?`<span style="font-size:13px">🛒</span>`:''}
     </div>
-  `;
-  showModal();
+    <div>
+      <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:600;line-height:1.3;margin-bottom:3px;color:${c.txt}">${esc(l.name)}</div>
+      <div style="font-size:11px;opacity:.7;color:${c.txt}">${unc}/${tot} item${tot!==1?'s':''}</div>
+    </div>
+  </div>`;
 }
 
-function doNewTrip(){
-  const name=document.getElementById('trip-name').value.trim();
-  if(!name){alert('Enter a trip name.');return;}
-  const id='trip_'+Date.now();
-  db.ref('/shopping/trips/'+id).set({name,items:[],createdAt:new Date().toISOString()});
-  closeModal();
-  setTimeout(()=>openTrip(id),400);
-}
-
-function openTrip(id){
-  activeTripId=id;
-  const trip=trips[id];if(!trip)return;
-  const items=trip.items||[];
-  const unc=items.filter(i=>!i.checked);
-  const chk=items.filter(i=>i.checked);
-  document.getElementById('m-title').textContent='✈️ '+esc(trip.name);
+function openGList(id){
+  activeGListId=id;
+  const l=groceryLists[id];if(!l)return;
+  const c=GLIST_COLORS.find(c=>c.id===l.color)||GLIST_COLORS[0];
+  const items=l.items||[];
+  const unc=items.filter(i=>!i.checked);const chk=items.filter(i=>i.checked);
+  document.getElementById('m-title').textContent=(l.emoji||'🛒')+' '+esc(l.name);
   document.getElementById('m-body').innerHTML=`
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <button class="btn btn-p btn-sm" onclick="openAddGItemModal()">+ Add Item</button>
+      <button class="btn btn-s btn-sm" onclick="openAddFromListModal('${id}')">📋 From list</button>
+      <button class="btn btn-s btn-sm" onclick="openAddFromRecipeToGList('${id}')">🍽️ From recipe</button>
+      ${l.shopping
+        ?`<button class="btn btn-ok btn-sm" onclick="finishShopping('${id}')">✅ Done</button>`
+        :`<button class="btn btn-sm" style="background:${c.bg};color:${c.txt};border:1.5px solid ${c.txt}" onclick="startShopping('${id}')">🛒 Start Shopping</button>`}
+    </div>
     <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-      <button class="btn btn-p btn-sm" onclick="openAddTripItemModal()">+ Add Item</button>
-      ${chk.length?`<button class="btn btn-s btn-sm" onclick="clearTripChk()">Clear got it (${chk.length})</button>`:''}
-      <span style="font-size:13px;color:var(--mut);align-self:center;margin-left:auto">${unc.length} remaining</span>
+      <button class="btn btn-sm" style="background:var(--bg);color:var(--mut);border:1px solid var(--bor)" onclick="openEditGListModal('${id}')">✏️ Edit</button>
+      <button class="btn btn-sm" style="background:var(--bg);color:var(--mut);border:1px solid var(--bor)" onclick="toggleGPin('${id}')">${l.pinned?'📌 Unpin':'📍 Pin'}</button>
+      ${chk.length?`<button class="btn btn-sm" style="background:var(--bg);color:var(--mut);border:1px solid var(--bor)" onclick="clearGChecked('${id}')">Clear done (${chk.length})</button>`:''}
     </div>
     ${!items.length
-      ?`<div class="empty" style="padding:24px 0"><div class="ei">🛍️</div><p>No items yet.<br>Start adding to your trip list!</p></div>`
+      ?`<div style="text-align:center;color:var(--mut);padding:24px 0;font-size:14px">No items yet — tap + to add!</div>`
       :`<div>
-          ${unc.map(item=>tripItemHtml(item,items.indexOf(item))).join('')}
-          ${chk.length?`<div style="padding:10px 0 4px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.6px">Got it ✓</div>
-          ${chk.map(item=>tripItemHtml(item,items.indexOf(item))).join('')}`:''}
+          ${unc.map(item=>gItemHtml(item,items.indexOf(item),id,l.shopping)).join('')}
+          ${chk.length?`<div style="padding:10px 0 4px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.6px">Got it ✓ (${chk.length})</div>${chk.map(item=>gItemHtml(item,items.indexOf(item),id,l.shopping)).join('')}`:''}
         </div>`
     }
-    <div style="height:8px"></div>
-  `;
+    <div style="height:8px"></div>`;
   showModal();
 }
 
-function tripItemHtml(item,idx){
-  return `<div class="sitem">
-    <button class="schk ${item.checked?'done':''}" onclick="togTripItem(${idx})">${item.checked?'✓':''}</button>
-    <span class="sname ${item.checked?'done':''}" style="flex:1">${esc(item.name)}</span>
+function gItemHtml(item,idx,id,shopping){
+  if(shopping){
+    return`<div style="display:flex;align-items:center;gap:14px;padding:16px;border-bottom:1px solid var(--bor)">
+      <button style="width:36px;height:36px;border-radius:50%;border:2px solid ${item.checked?'var(--ok)':'var(--bor)'};background:${item.checked?'var(--ok)':'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;transition:all .2s;flex-shrink:0" onclick="togGItem('${id}',${idx})">${item.checked?'✓':''}</button>
+      <div style="flex:1;min-width:0"><div style="font-size:17px;font-weight:${item.checked?'400':'700'};color:${item.checked?'var(--mut)':'var(--txt)'};${item.checked?'text-decoration:line-through;':''}">${esc(item.name)}</div>${item.source?`<div style="font-size:11px;color:var(--mut);margin-top:2px">from ${esc(item.source)}</div>`:''}</div>
+      <span style="font-size:14px;color:var(--mut)">${esc(item.qty||'')}</span>
+    </div>`;
+  }
+  return`<div class="sitem">
+    <button class="schk ${item.checked?'done':''}" onclick="togGItem('${id}',${idx})">${item.checked?'✓':''}</button>
+    <div style="flex:1;min-width:0"><div class="sname ${item.checked?'done':''}">${esc(item.name)}</div>${item.source?`<div class="ssrc">from ${esc(item.source)}</div>`:''}</div>
     <span class="sqty">${esc(item.qty||'')}</span>
-    <button class="sdel" onclick="delTripItem(${idx})">×</button>
+    <button class="sdel" onclick="delGItem('${id}',${idx})">×</button>
   </div>`;
 }
 
-function openAddTripItemModal(){
-  document.getElementById('m-title').textContent='+ Add to Trip';
+function togGItem(id,idx){
+  const l=groceryLists[id];if(!l)return;
+  const items=(l.items||[]).map((item,i)=>i===idx?{...item,checked:!item.checked}:item);
+  db.ref('/grocery/lists/'+id+'/items').set(items);
+  db.ref('/grocery/lists/'+id+'/updatedAt').set(new Date().toISOString());
+  setTimeout(()=>openGList(id),150);
+}
+function delGItem(id,idx){
+  const l=groceryLists[id];if(!l)return;
+  db.ref('/grocery/lists/'+id+'/items').set((l.items||[]).filter((_,i)=>i!==idx));
+  db.ref('/grocery/lists/'+id+'/updatedAt').set(new Date().toISOString());
+  setTimeout(()=>openGList(id),150);
+}
+function clearGChecked(id){
+  const l=groceryLists[id];if(!l)return;
+  db.ref('/grocery/lists/'+id+'/items').set((l.items||[]).filter(i=>!i.checked));
+  setTimeout(()=>openGList(id),200);
+}
+function startShopping(id){
+  Object.keys(groceryLists).forEach(lid=>{if(groceryLists[lid].shopping&&lid!==id)db.ref('/grocery/lists/'+lid+'/shopping').remove();});
+  db.ref('/grocery/lists/'+id+'/shopping').set(true);
+  db.ref('/grocery/lists/'+id+'/updatedAt').set(new Date().toISOString());
+  setTimeout(()=>openGList(id),200);
+}
+function finishShopping(id){
+  if(!confirm('Done shopping? Checked items will be cleared.'))return;
+  const l=groceryLists[id];if(!l)return;
+  db.ref('/grocery/lists/'+id+'/items').set((l.items||[]).filter(i=>!i.checked));
+  db.ref('/grocery/lists/'+id+'/shopping').remove();
+  setTimeout(()=>openGList(id),200);
+}
+function toggleGPin(id){db.ref('/grocery/lists/'+id+'/pinned').set(!groceryLists[id]?.pinned);setTimeout(()=>openGList(id),200);}
+
+function openNewGListModal(){
+  newGColor='pink';newGEmoji='🛒';
+  document.getElementById('m-title').textContent='✨ New List';
   document.getElementById('m-body').innerHTML=`
-    <div class="fg"><label class="fl">Item Name</label><input type="text" class="fi" id="ti-name" placeholder="e.g. Sunscreen"></div>
-    <div class="fg"><label class="fl">Quantity (optional)</label><input type="text" class="fi" id="ti-qty" placeholder="e.g. 1 bottle"></div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-s" onclick="openTrip('${activeTripId}')" style="flex:1">← Back</button>
-      <button class="btn btn-p" onclick="doAddTripItem()" style="flex:1">Add Item</button>
+    <div class="fg"><label class="fl">List Name</label><input type="text" class="fi" id="gl-name" placeholder="e.g. Pantry, Costco, Birthday Party..."></div>
+    <div class="fg"><label class="fl">Icon</label><div style="display:flex;flex-wrap:wrap;gap:8px" id="ep-new">${GLIST_EMOJIS.map(e=>`<span style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid ${e==='🛒'?'var(--acc)':'transparent'};background:${e==='🛒'?'var(--acc-lt)':'none'}" onclick="pickGEmoji('${e}',this)">${e}</span>`).join('')}</div></div>
+    <div class="fg"><label class="fl">Color</label><div style="display:flex;gap:10px;flex-wrap:wrap" id="cp-new">${GLIST_COLORS.map(c=>`<div style="width:32px;height:32px;border-radius:50%;cursor:pointer;background:${c.bg};border:${c.id==='pink'?'3px':'2px'} solid ${c.txt};transition:all .2s" onclick="pickGColor('${c.id}',this)"></div>`).join('')}</div></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button><button class="btn btn-p" onclick="doNewGList()" style="flex:1">Create & Open</button></div>`;
+  showModal();
+  setTimeout(()=>document.getElementById('gl-name')?.focus(),300);
+}
+function pickGEmoji(e,el){
+  newGEmoji=e;
+  el.parentElement.querySelectorAll('span').forEach(s=>{s.style.border='2px solid transparent';s.style.background='none';});
+  el.style.border='2px solid var(--acc)';el.style.background='var(--acc-lt)';
+}
+function pickGColor(c,el){
+  newGColor=c;
+  const col=GLIST_COLORS.find(x=>x.id===c);if(!col)return;
+  el.parentElement.querySelectorAll('div').forEach(d=>{
+    const dc=GLIST_COLORS.find(x=>x.bg===d.style.background);
+    if(dc){d.style.border=`2px solid ${dc.txt}`;d.style.transform='scale(1)';}
+  });
+  el.style.border=`3px solid ${col.txt}`;el.style.transform='scale(1.15)';
+}
+function doNewGList(){
+  const name=document.getElementById('gl-name').value.trim();if(!name){alert('Enter a list name.');return;}
+  const id='gl_'+Date.now();
+  db.ref('/grocery/lists/'+id).set({name,color:newGColor,emoji:newGEmoji,items:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),pinned:false,shopping:false});
+  closeModal();setTimeout(()=>openGList(id),400);
+}
+function openEditGListModal(id){
+  const l=groceryLists[id];if(!l)return;
+  newGColor=l.color||'pink';newGEmoji=l.emoji||'🛒';
+  document.getElementById('m-title').textContent='✏️ Edit List';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg"><label class="fl">List Name</label><input type="text" class="fi" id="el-name" value="${esc(l.name)}"></div>
+    <div class="fg"><label class="fl">Icon</label><div style="display:flex;flex-wrap:wrap;gap:8px">${GLIST_EMOJIS.map(e=>`<span style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid ${e===newGEmoji?'var(--acc)':'transparent'};background:${e===newGEmoji?'var(--acc-lt)':'none'}" onclick="pickGEmoji('${e}',this)">${e}</span>`).join('')}</div></div>
+    <div class="fg"><label class="fl">Color</label><div style="display:flex;gap:10px;flex-wrap:wrap">${GLIST_COLORS.map(c=>`<div style="width:32px;height:32px;border-radius:50%;cursor:pointer;background:${c.bg};border:${c.id===newGColor?'3px':'2px'} solid ${c.txt};transition:all .2s" onclick="pickGColor('${c.id}',this)"></div>`).join('')}</div></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-d btn-sm" onclick="deleteGList('${id}')">🗑️ Delete</button>
+      <button class="btn btn-s" onclick="openGList('${id}')" style="flex:1">Cancel</button>
+      <button class="btn btn-p" onclick="doEditGList('${id}')" style="flex:1">Save</button>
+    </div>`;
+}
+function doEditGList(id){
+  const name=document.getElementById('el-name').value.trim();if(!name){alert('Enter a name.');return;}
+  db.ref('/grocery/lists/'+id).update({name,color:newGColor,emoji:newGEmoji,updatedAt:new Date().toISOString()});
+  closeModal();
+}
+function deleteGList(id){
+  if(!confirm('Delete "'+groceryLists[id]?.name+'"? Cannot be undone.'))return;
+  db.ref('/grocery/lists/'+id).remove();closeModal();
+}
+function openAddGItemModal(){
+  document.getElementById('m-title').textContent='+ Add Item';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg"><label class="fl">Item Name</label><input type="text" class="fi" id="gi-name" placeholder="e.g. Bread flour" onkeydown="if(event.key==='Enter')doAddGItem()"></div>
+    <div class="fg"><label class="fl">Quantity (optional)</label><input type="text" class="fi" id="gi-qty" placeholder="e.g. 5 lbs"></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-s" onclick="openGList('${activeGListId}')" style="flex:1">← Back</button><button class="btn btn-p" onclick="doAddGItem()" style="flex:1">Add</button></div>`;
+  setTimeout(()=>document.getElementById('gi-name')?.focus(),300);
+}
+function doAddGItem(){
+  const name=document.getElementById('gi-name').value.trim();if(!name){alert('Enter item name.');return;}
+  const qty=document.getElementById('gi-qty').value.trim();
+  const l=groceryLists[activeGListId];if(!l)return;
+  db.ref('/grocery/lists/'+activeGListId+'/items').set([...(l.items||[]),{name,qty,checked:false,source:''}]);
+  db.ref('/grocery/lists/'+activeGListId+'/updatedAt').set(new Date().toISOString());
+  setTimeout(()=>openGList(activeGListId),200);
+}
+function openAddFromListModal(id){
+  const others=Object.entries(groceryLists).filter(([lid])=>lid!==id);
+  document.getElementById('m-title').textContent='📋 From another list';
+  document.getElementById('m-body').innerHTML=`
+    <p style="font-size:13px;color:var(--mut);margin-bottom:14px">Copy unchecked items from:</p>
+    ${!others.length?`<div style="text-align:center;color:var(--mut);padding:20px 0">No other lists yet.</div>`
+      :others.map(([lid,l])=>{
+        const c=GLIST_COLORS.find(c=>c.id===l.color)||GLIST_COLORS[0];
+        const unc=(l.items||[]).filter(i=>!i.checked).length;
+        return`<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--bor);background:${c.bg};cursor:pointer;margin-bottom:8px" onclick="doCopyFromList('${id}','${lid}')">
+          <span style="font-size:24px">${l.emoji||'🛒'}</span>
+          <div style="flex:1"><div style="font-weight:700;font-size:15px;color:${c.txt}">${esc(l.name)}</div><div style="font-size:12px;color:${c.txt};opacity:.75">${unc} unchecked item${unc!==1?'s':''}</div></div>
+        </div>`;}).join('')
+    }
+    <button class="btn btn-s btn-full" onclick="openGList('${id}')" style="margin-top:8px">← Back</button>`;
+}
+function doCopyFromList(targetId,sourceId){
+  const src=groceryLists[sourceId];const tgt=groceryLists[targetId];if(!src||!tgt)return;
+  const toAdd=(src.items||[]).filter(i=>!i.checked).map(i=>({...i,checked:false,source:src.name}));
+  db.ref('/grocery/lists/'+targetId+'/items').set([...(tgt.items||[]),...toAdd]);
+  db.ref('/grocery/lists/'+targetId+'/updatedAt').set(new Date().toISOString());
+  setTimeout(()=>openGList(targetId),200);
+}
+function openAddFromRecipeToGList(id){
+  activeGListId=id;
+  document.getElementById('m-title').textContent='🍽️ Add from Recipe';
+  const rlist=Object.entries(recipes);
+  document.getElementById('m-body').innerHTML=`
+    <p style="font-size:13px;color:var(--mut);margin-bottom:12px">Pick a recipe:</p>
+    ${!rlist.length?`<div class="empty" style="padding:16px 0"><div class="ei">📖</div><p>No recipes yet.</p></div>`
+      :rlist.map(([rid,r])=>{const c=CM[r.category];return`<div class="picker-item" onclick="pickRecipeForGList('${id}','${rid}')">
+        ${r.photoURL?`<img class="picker-th" src="${r.photoURL}" loading="lazy">`:`<div class="picker-ph">${c?.emoji||'🍽️'}</div>`}
+        <div><div style="font-weight:700;font-size:15px">${esc(r.name)}</div>${c?`<span class="pill ${c.cls}">${c.emoji} ${c.label}</span>`:''}</div>
+      </div>`;}).join('')
+    }
+    <button class="btn btn-s btn-full" onclick="openGList('${id}')" style="margin-top:8px">← Back</button>`;
+}
+function pickRecipeForGList(listId,rid){
+  const r=recipes[rid];const l=groceryLists[listId];if(!r||!l)return;
+  const base=r.servings||4;
+  document.getElementById('m-title').textContent='🍽️ '+esc(r.name);
+  document.getElementById('m-body').innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="font-weight:700">Servings:</span>
+      <div class="sv-ctr"><button class="sv-btn" onclick="adjRGS(-1,'${rid}','${listId}',${base})">−</button><span class="sv-num" id="rgs-sv" data-base="${base}">${base}</span><button class="sv-btn" onclick="adjRGS(1,'${rid}','${listId}',${base})">+</button></div>
     </div>
-  `;
-  setTimeout(()=>document.getElementById('ti-name')?.focus(),300);
+    <div id="rgs-ings">${(r.ingredients||[]).map(i=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bor);font-size:14px"><span>${esc(i.name)}</span><span style="color:var(--mut)">${esc(i.qty||'')}</span></div>`).join('')}</div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-s" onclick="openAddFromRecipeToGList('${listId}')" style="flex:1">← Back</button>
+      <button class="btn btn-p" onclick="doAddRecipeToGList('${listId}','${rid}')" style="flex:1">Add All</button>
+    </div>`;
 }
-
-function doAddTripItem(){
-  const name=document.getElementById('ti-name').value.trim();
-  if(!name){alert('Enter an item name.');return;}
-  const qty=document.getElementById('ti-qty').value.trim();
-  const trip=trips[activeTripId];if(!trip)return;
-  const items=[...(trip.items||[]),{name,qty,checked:false}];
-  db.ref('/shopping/trips/'+activeTripId+'/items').set(items);
-  setTimeout(()=>openTrip(activeTripId),300);
+function adjRGS(delta,rid,listId,base){
+  const el=document.getElementById('rgs-sv');if(!el)return;
+  const nxt=Math.max(1,(parseInt(el.textContent)||base)+delta);el.textContent=nxt;
+  const r=recipes[rid];if(!r||!r.ingredients)return;
+  document.getElementById('rgs-ings').innerHTML=r.ingredients.map(i=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bor);font-size:14px"><span>${esc(i.name)}</span><span style="color:var(--mut)">${esc(scaleQ(i.qty,nxt/base))}</span></div>`).join('');
 }
-
-function togTripItem(idx){
-  const trip=trips[activeTripId];if(!trip)return;
-  const items=(trip.items||[]).map((item,i)=>i===idx?{...item,checked:!item.checked}:item);
-  db.ref('/shopping/trips/'+activeTripId+'/items').set(items);
-  setTimeout(()=>openTrip(activeTripId),200);
+function doAddRecipeToGList(listId,rid){
+  const r=recipes[rid];const l=groceryLists[listId];if(!r||!l)return;
+  const el=document.getElementById('rgs-sv');
+  const cur=el?parseInt(el.textContent)||r.servings||4:r.servings||4;
+  const factor=cur/(r.servings||4);
+  const ni=(r.ingredients||[]).filter(i=>i.name).map(i=>({name:i.name,qty:scaleQ(i.qty,factor),checked:false,source:r.name}));
+  db.ref('/grocery/lists/'+listId+'/items').set([...(l.items||[]),...ni]);
+  db.ref('/grocery/lists/'+listId+'/updatedAt').set(new Date().toISOString());
+  setTimeout(()=>openGList(listId),200);
 }
-
-function delTripItem(idx){
-  const trip=trips[activeTripId];if(!trip)return;
-  const items=(trip.items||[]).filter((_,i)=>i!==idx);
-  db.ref('/shopping/trips/'+activeTripId+'/items').set(items);
-  setTimeout(()=>openTrip(activeTripId),200);
-}
-
-function clearTripChk(){
-  const trip=trips[activeTripId];if(!trip)return;
-  db.ref('/shopping/trips/'+activeTripId+'/items').set((trip.items||[]).filter(i=>!i.checked));
-  setTimeout(()=>openTrip(activeTripId),200);
-}
-
-function deleteTrip(e,id){
-  e.stopPropagation();
-  if(!confirm('Delete "'+trips[id]?.name+'" trip list?'))return;
-  db.ref('/shopping/trips/'+id).remove();
-}
-
-// ============================================================
-// TO-DO LISTS
-// ============================================================
-const TODO_COLORS=[
-  {id:'pink',bg:'#F5D0DC',txt:'#8B2252'},
-  {id:'purple',bg:'#E8D5F5',txt:'#5B2C8B'},
-  {id:'blue',bg:'#D5E8F5',txt:'#1A5276'},
-  {id:'green',bg:'#D5F5E3',txt:'#1E8449'},
-  {id:'orange',bg:'#F5E8D5',txt:'#8B4513'},
-  {id:'yellow',bg:'#FDFBE8',txt:'#7D6608'},
-];
-let newTodoColor='pink';
-let activeTodoId=null;
 
 function renderTodos(){
   const el=document.getElementById('t-body');
@@ -1858,6 +1695,35 @@ function deleteTodo(e,id){
   db.ref('/todos/'+id).remove();
 }
 
+
+// BAKERY LOG
+function openBakeryLog(rid){
+  document.getElementById('m-title').textContent='🏪 Log a Bake';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg"><label class="fl">Date</label><input type="date" id="bl-date" value="${fmtD(new Date())}"></div>
+    <div class="fg"><label class="fl">How many batches/loaves?</label><input type="number" class="fi" id="bl-batches" placeholder="e.g. 2" min="1" value="1"></div>
+    <div class="fg"><label class="fl">Rating</label><div style="display:flex;gap:6px" id="star-row">${[1,2,3,4,5].map(i=>`<button style="font-size:24px;cursor:pointer;background:none;border:none;padding:2px" onclick="setStars(${i})" id="star-${i}">☆</button>`).join('')}</div></div>
+    <div class="fg"><label class="fl">Conditions</label><input type="text" class="fi" id="bl-cond" placeholder="e.g. 475°F, 48hr cold proof, warm kitchen"></div>
+    <div class="fg"><label class="fl">Notes — what worked, what to change</label><textarea class="fta" id="bl-notes" placeholder="Observations, results, improvements for next time..."></textarea></div>
+    <div style="display:flex;gap:8px;padding-bottom:8px"><button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button><button class="btn btn-p" onclick="saveBakeryLog('${rid}')" style="flex:1">Save Log</button></div>`;
+  window._blStars=0;showModal();
+}
+function setStars(n){
+  window._blStars=n;
+  [1,2,3,4,5].forEach(i=>{const el=document.getElementById('star-'+i);if(el)el.textContent=i<=n?'⭐':'☆';});
+}
+async function saveBakeryLog(rid){
+  const date=document.getElementById('bl-date').value;
+  const batches=document.getElementById('bl-batches').value||'1';
+  const conditions=document.getElementById('bl-cond').value.trim();
+  const notes=document.getElementById('bl-notes').value.trim();
+  const stars=window._blStars||0;
+  if(!notes&&!stars){alert('Add at least a rating or some notes.');return;}
+  await db.ref('/recipes/'+rid+'/bakeHistory').push({date,batches,conditions,notes,stars,loggedAt:new Date().toISOString()});
+  closeModal();
+  alert('Bake logged! 🍞');
+}
+
 // ============================================================
 // STARTER
 // ============================================================
@@ -1927,7 +1793,14 @@ function confBakeDay(){
   const bd=new Date(v+'T12:00:00');
   SD.forEach(s=>{const d=addDays(bd,s.offset);db.ref('/calendar/'+fmtD(d)+'/sourdough').set({emoji:s.emoji,label:s.label});});
 }
-function clrBakeDay(){if(!confirm('Clear the bake day schedule?'))return;db.ref('/starter').update({bakeDay:null});}
+function clrBakeDay(){
+  if(!confirm('Clear the bake day schedule and remove from calendar?'))return;
+  if(starterD.bakeDay){
+    const bd=new Date(starterD.bakeDay+'T12:00:00');
+    SD.forEach(s=>{const d=addDays(bd,s.offset);db.ref('/calendar/'+fmtD(d)+'/sourdough').remove();});
+  }
+  db.ref('/starter').update({bakeDay:null});
+}
 function feedStarter(){db.ref('/starter').update({lastFed:new Date().toISOString()});}
 function setLoc(loc){db.ref('/starter').update({location:loc});}
 function saveTempNote(v){db.ref('/starter').update({tempNote:v});}
