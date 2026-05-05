@@ -46,7 +46,7 @@
     .bnav{position:fixed;bottom:0;left:0;right:0;height:var(--nh);background:var(--sur);border-top:1.5px solid var(--bor);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
     .nbtn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;color:var(--mut);font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;}
     .nbtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-    .nbtn.active{color:var(--acc);}
+    .nbtn.active{color:var(--acc);}.nbtn.active svg{stroke:var(--acc);}
 
     /* FAB */
     .fab{position:fixed;bottom:calc(var(--nh)+14px+env(safe-area-inset-bottom));right:16px;width:52px;height:52px;border-radius:50%;background:var(--acc);color:#fff;border:none;font-size:28px;display:none;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(200,84,128,.4);cursor:pointer;z-index:50;}
@@ -142,7 +142,7 @@
     .t-btn-w{background:#fff;color:var(--pri);}
     .t-btn-o{background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.5);}
 
-    .wk-card{margin:10px 16px 0;background:var(--sur);border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(140,34,82,.08);}
+    .wk-card{margin:10px 16px 0;background:var(--sur);border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(140,34,82,.1);border:1px solid var(--bor);}
     .wk-row{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--bg);min-height:46px;gap:10px;}
     .wk-row:last-child{border-bottom:none;}
     .wk-day{font-size:12px;font-weight:700;color:var(--mut);width:32px;flex-shrink:0;}
@@ -160,7 +160,7 @@
     .fchip.active{background:var(--pri);border-color:var(--pri);color:#fff;}
 
     .rgrid{padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-    .rcard{background:var(--sur);border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(140,34,82,.1);cursor:pointer;position:relative;}
+    .rcard{background:var(--sur);border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(140,34,82,.12);cursor:pointer;position:relative;}
     .rcard:active{transform:scale(.97);}
     .rcard-img{width:100%;height:110px;object-fit:cover;display:block;}
     .rcard-ph{width:100%;height:110px;background:linear-gradient(135deg,#FAE8EF,#F5D0DC);display:flex;align-items:center;justify-content:center;font-size:36px;}
@@ -225,7 +225,7 @@
     .trip-meta{font-size:12px;color:var(--mut);margin-top:3px;}
 
     /* STARTER */
-    .sc-card{margin:16px;background:var(--sur);border-radius:18px;overflow:hidden;box-shadow:0 2px 12px rgba(140,34,82,.12);}
+    .sc-card{margin:16px;background:var(--sur);border-radius:20px;overflow:hidden;box-shadow:0 6px 20px rgba(140,34,82,.15);}
     .sc-top{background:linear-gradient(135deg,var(--pri),var(--acc));color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
     .sc-badge{font-size:14px;font-weight:700;}
     .sc-meta{display:flex;gap:10px;padding:12px 14px 0;}
@@ -268,7 +268,7 @@
     .shop-card-icon{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--pri),var(--acc));display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
     .shop-card-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--pri);}
     .shop-card-sub{font-size:13px;color:var(--mut);margin-top:2px;}
-    .quote-card{margin:10px 16px 0;background:var(--sur);border-radius:16px;padding:14px 16px;border-left:4px solid var(--acc);box-shadow:0 2px 8px rgba(140,34,82,.07);}
+    .quote-card{margin:10px 16px 0;background:linear-gradient(135deg,#FAE8EF,#FDF5F7);border-radius:16px;padding:14px 16px;border-left:4px solid var(--acc);box-shadow:0 2px 12px rgba(140,34,82,.1);}
     .quote-text{font-family:'Playfair Display',serif;font-size:14px;font-style:italic;color:var(--pri);line-height:1.6;}
     .quote-ref{font-size:12px;color:var(--mut);margin-top:6px;font-weight:700;}
     .shop-opt-btn{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;border:1.5px solid var(--bor);background:var(--sur);width:100%;cursor:pointer;text-align:left;transition:all .2s;margin-bottom:10px;}
@@ -291,6 +291,12 @@
     .combine-opt.sel{border-color:var(--acc);background:var(--acc-lt);}
     .quick-add-row{display:flex;gap:8px;padding:10px 16px;background:var(--sur);border-bottom:1.5px solid var(--bor);}
     .quick-add-row input{flex:1;padding:10px 12px;border:1.5px solid var(--bor);border-radius:8px;font-size:15px;background:var(--bg);color:var(--txt);}
+
+    .cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:8px;}
+
+    #list-ov .s-ohdr{display:flex;align-items:center;gap:12px;}
+    #list-ov .title{flex:1;text-align:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:600;}
+    #list-inner{padding:0;}
   </style>
 </head>
 <body>
@@ -306,7 +312,6 @@
     <div class="view active" id="view-dashboard"><div id="d-body"></div></div>
     <div class="view" id="view-recipes"><div id="r-body"></div></div>
     <div class="view" id="view-calendar"><div id="c-body"></div></div>
-    <div class="view" id="view-shopping"><div id="s-body"></div></div>
     <div class="view" id="view-grocery"><div id="g-body"></div></div>
     <div class="view" id="view-todos"><div id="t-body"></div></div>
   </div>
@@ -337,6 +342,15 @@
     <button class="back-btn" onclick="closeStarter()">✕ Close</button>
   </div>
   <div id="s-inner"></div>
+</div>
+
+<div class="s-ov" id="list-ov">
+  <div class="s-ohdr" id="list-ohdr">
+    <button class="back-btn" onclick="closeListView()">‹ Back</button>
+    <span class="title" id="list-title"></span>
+    <div style="width:60px"></div>
+  </div>
+  <div id="list-inner"></div>
 </div>
 
 <!-- Modal -->
@@ -388,12 +402,14 @@ const SLOTS=[
   {id:'dessert',label:'Dessert',cats:['dessert','baked']},
 ];
 
-const SD=[
+// Default bake schedule - overridden by user's custom schedule from Firebase
+const SD_DEFAULT=[
   {offset:-3,emoji:'🌾',label:'Feed Starter / Levain Build'},
   {offset:-2,emoji:'🥣',label:'Mix Dough + Bulk Ferment'},
   {offset:-1,emoji:'🔄',label:'Shape + Cold Proof (fridge)'},
   {offset:0, emoji:'🔥',label:'Score & Bake!'},
 ];
+let SD=[...SD_DEFAULT]; // will be overridden by Firebase
 
 const STAPLE_DEF=[
   'All-purpose flour','Bread flour','Butter','Eggs','Sugar','Brown sugar',
@@ -404,10 +420,19 @@ const STAPLE_DEF=[
 // ============================================================
 // STATE
 // ============================================================
+const TODO_COLORS=[
+  {id:'pink',bg:'#F5D0DC',txt:'#8B2252'},
+  {id:'rose',bg:'#FAE8EF',txt:'#C85480'},
+  {id:'purple',bg:'#E8D5F5',txt:'#5B2C8B'},
+  {id:'blue',bg:'#D5E8F5',txt:'#1A5276'},
+  {id:'teal',bg:'#D5F0EE',txt:'#1A6B65'},
+  {id:'green',bg:'#D5F5E3',txt:'#1E8449'},
+];
 let recipes={},calD={},ideas={},groceryLists={};
 let starterD={lastFed:null,location:'counter',tempNote:'',bakeDay:null};
 let bakeLog={},shopItems=[],shopStaples=[];
-let curView='dashboard',wkOff=0,rFilt='all',rTab='recipes',shopTab='list',todoTab=null;
+let curView='dashboard',wkOff=0,rFilt='all',rTab='recipes',shopTab='list',todoTab=null,calDayDetail=null,newTodoColor='pink';
+let calMonth=new Date().getMonth(),calYear=new Date().getFullYear();
 let todos={},weeklyD={template:[],current:[],weekKey:null},combineSelections=[];
 let pendingPhoto=null,rFormCat=null,rFormServ=4,editingRid=null,addShopRid=null;
 let calPickRid=null,calPickStep=1,calPickDs=null;
@@ -426,7 +451,7 @@ function initFB(){
   },()=>setSS('err','Offline'));
   db.ref('/calendar').on('value',s=>{
     calD=s.val()||{};
-    if(curView==='calendar')renderCalendar();
+    if(curView==='calendar'){if(calDayDetail)renderDayDetail(calDayDetail);else renderCalendar();}
     if(curView==='dashboard')renderDash();
   });
   db.ref('/ideas').on('value',s=>{
@@ -541,7 +566,8 @@ function renderDash(){
   const quote=QUOTES[dayIdx%QUOTES.length];
   const activeItems=Object.values(groceryLists).reduce((s,l)=>s+(l.items||[]).filter(i=>!i.checked).length,0);
   const totalItems=Object.values(groceryLists).reduce((s,l)=>s+(l.items||[]).length,0);
-  const shopSub=Object.keys(groceryLists).length>0?`${activeItems} item${activeItems!==1?'s':''} remaining across ${Object.keys(groceryLists).length} list${Object.keys(groceryLists).length!==1?'s':''}`:'Tap to create a list';
+  const gListCount=Object.keys(groceryLists).length;
+  const shopSub=gListCount>0?`${activeItems} item${activeItems!==1?'s':''} remaining across ${gListCount} list${gListCount!==1?'s':''}`:'Tap to create a list';
   const todoActive=Object.values(todos).reduce((sum,t)=>sum+(t.items||[]).filter(i=>!i.checked).length,0);
 
   const wkHtml=getWeekDates(0).map(ds=>{
@@ -608,63 +634,23 @@ function renderDash(){
 }
 
 function openShoppingCard(){
-  const activeItems=shopItems.filter(i=>!i.checked).length;
-  document.getElementById('m-title').textContent='🛍️ Shopping List';
+  document.getElementById('m-title').textContent='✨ Create a List';
   document.getElementById('m-body').innerHTML=`
-    <p style="font-size:14px;color:var(--mut);margin-bottom:16px">What kind of list would you like to create?</p>
-    <button class="shop-opt-btn" onclick="openNewListFromDash()">
-      <span class="shop-opt-icon">📋</span>
-      <div>
-        <div class="shop-opt-title">New List</div>
-        <div class="shop-opt-sub">Start a fresh, blank shopping list</div>
-      </div>
+    <p style="font-size:14px;color:var(--mut);margin-bottom:16px">What kind of list?</p>
+    <button class="shop-opt-btn" onclick="closeModal();nav('grocery');setTimeout(openNewGListModal,300)">
+      <span class="shop-opt-icon">🛒</span>
+      <div><div class="shop-opt-title">Grocery List</div><div class="shop-opt-sub">For food, baking ingredients, errands</div></div>
     </button>
-    <button class="shop-opt-btn" onclick="openWeeklyListFromDash()">
-      <span class="shop-opt-icon">🗓️</span>
-      <div>
-        <div class="shop-opt-title">Weekly List</div>
-        <div class="shop-opt-sub">Pre-filled from your meal plan this week</div>
-      </div>
+    <button class="shop-opt-btn" onclick="closeModal();nav('todos');setTimeout(openNewTodoModal,300)">
+      <span class="shop-opt-icon">✅</span>
+      <div><div class="shop-opt-title">To-Do List</div><div class="shop-opt-sub">Tasks, errands, things to buy anywhere</div></div>
     </button>
-    <button class="shop-opt-btn" onclick="openTripListFromDash()">
-      <span class="shop-opt-icon">✈️</span>
-      <div>
-        <div class="shop-opt-title">Trip List</div>
-        <div class="shop-opt-sub">For vacation, holidays, or special occasions</div>
-      </div>
-    </button>
-    ${activeItems>0?`<div style="margin-top:4px;padding:12px 14px;background:var(--acc-lt);border-radius:12px;display:flex;align-items:center;justify-content:space-between">
-      <span style="font-size:14px;color:var(--pri);font-weight:700">Current list: ${activeItems} item${activeItems!==1?'s':''} remaining</span>
-      <button onclick="nav('shopping');closeModal()" style="border:none;background:none;font-size:13px;font-weight:700;color:var(--acc);cursor:pointer">View →</button>
-    </div>`:''}
     <div style="height:8px"></div>
   `;
   showModal();
 }
 
-function openNewListFromDash(){
-  if(shopItems.length>0){
-    if(!confirm('Start a fresh list? Your current list ('+(shopItems.length)+' items) will be cleared.'))return;
-  }
-  closeModal();
-  nav('grocery');
-  setTimeout(openNewGListModal,300);
-}
 
-function openWeeklyListFromDash(){
-  closeModal();
-  genFromCal();
-  nav('shopping');
-}
-
-function openTripListFromDash(){
-  closeModal();
-  setTimeout(()=>{
-    shopTab='trips';
-    nav('shopping');
-    setTimeout(()=>openNewTripModal(),300);
-  },250);
-}
 
 function editDashMeal(ds,slot){openSlotPicker(ds,slot,true);}
 
@@ -1152,19 +1138,119 @@ function pickMoveDay(targetDs){
 // ============================================================
 // CALENDAR
 // ============================================================
+// Monthly calendar state
+
 function renderCalendar(){
+  if(calDayDetail){renderDayDetail(calDayDetail);return;}
   const el=document.getElementById('c-body');
-  const dates=getWeekDates(wkOff);
-  const s=new Date(dates[0]+'T12:00:00'),e=new Date(dates[6]+'T12:00:00');
+  const now=new Date();
+  const firstDay=new Date(calYear,calMonth,1);
+  const lastDay=new Date(calYear,calMonth+1,0);
+  const monthName=firstDay.toLocaleDateString('en',{month:'long',year:'numeric'});
+  const startDow=firstDay.getDay(); // 0=Sun
+  const totalDays=lastDay.getDate();
+  const todayStr=fmtD(now);
+
+  // Build day cells
+  let cells='';
+  for(let i=0;i<startDow;i++) cells+=`<div style="min-height:64px"></div>`;
+  for(let d=1;d<=totalDays;d++){
+    const ds=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const day=calD[ds]||{};
+    const isToday=ds===todayStr;
+    const hasMeals=SLOTS.some(s=>day[s.id]);
+    const hasBake=!!day.sourdough;
+    const hasNote=!!day.note;
+    cells+=`<div onclick="openDayDetail('${ds}')" style="min-height:58px;border-radius:8px;padding:5px;cursor:pointer;background:${isToday?'var(--acc)':'var(--sur)'};border:${isToday?'none':'1px solid var(--bor)'};box-shadow:${isToday?'0 2px 8px rgba(200,84,128,.3)':'none'};transition:all .15s">
+      <div style="font-size:12px;font-weight:700;color:${isToday?'#fff':'var(--pri)'};margin-bottom:3px">${d}</div>
+      ${hasBake?`<div style="font-size:9px;background:${isToday?'rgba(255,255,255,.3)':'#FFF3E8'};color:${isToday?'#fff':'#8B4513'};padding:1px 3px;border-radius:3px;margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4">${day.sourdough.emoji}</div>`:''}
+      ${SLOTS.filter(s=>day[s.id]).slice(0,2).map(s=>{const m=getMealDisplay(day[s.id]);return m?`<div style="font-size:9px;color:${isToday?'#fff':'var(--acc)'};font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4">${m.name.split(' ')[0]}</div>`:''}).join('')}
+      ${(hasMeals||hasBake)?'':`<div style="width:5px;height:5px;border-radius:50%;background:var(--bor);margin-top:4px"></div>`}
+    </div>`;
+  }
+
   el.innerHTML=`
-    <div class="wknav">
-      <button class="wkbtn" onclick="chWk(-1)">‹</button>
-      <span class="wklbl">${s.toLocaleDateString('en',{month:'short',day:'numeric'})} – ${e.toLocaleDateString('en',{month:'short',day:'numeric'})}</span>
-      <button class="wkbtn" onclick="chWk(1)">›</button>
+    <div style="background:var(--pri);padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+      <button style="width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,.2);font-size:20px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center" onclick="chMonth(-1)">‹</button>
+      <span style="font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:#fff">${monthName}</span>
+      <button style="width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,.2);font-size:20px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center" onclick="chMonth(1)">›</button>
     </div>
-    ${dates.map(ds=>dCardHtml(ds)).join('')}
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--pri);padding:4px 8px 8px">
+      ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div style="text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.7);padding:4px 0">${d}</div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:8px;background:var(--bg)">
+      ${cells}
+    </div>
     <div style="height:16px"></div>
   `;
+}
+
+function chMonth(delta){
+  calMonth+=delta;
+  if(calMonth>11){calMonth=0;calYear++;}
+  if(calMonth<0){calMonth=11;calYear--;}
+  renderCalendar();
+}
+
+function openDayDetail(ds){
+  calDayDetail=ds;
+  renderDayDetail(ds);
+}
+
+function renderDayDetail(ds){
+  const el=document.getElementById('c-body');
+  const d=new Date(ds+'T12:00:00');
+  const isT=ds===fmtD(new Date());
+  const day=calD[ds]||{};
+  const sd=day.sourdough;
+
+  const slotsHtml=SLOTS.map(slot=>{
+    const slotVal=day[slot.id];
+    const meal=getMealDisplay(slotVal);
+    return `<div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bor);gap:10px">
+      <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);width:72px;flex-shrink:0">${slot.label}</span>
+      ${meal
+        ?`<span style="flex:1;font-size:15px;font-weight:700;color:${meal.isCustom?'var(--mut)':'var(--txt)'};font-style:${meal.isCustom?'italic':'normal'};cursor:pointer" onclick="openSlotPicker('${ds}','${slot.id}',true)">${esc(meal.name)}</span>
+          <button onclick="openSlotPicker('${ds}','${slot.id}',true)" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--mut)">✏️</button>
+          <button onclick="rmSlot('${ds}','${slot.id}')" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--mut)">×</button>`
+        :`<span style="flex:1;font-size:13px;color:var(--bor);font-style:italic">—</span>
+          <button onclick="openSlotPicker('${ds}','${slot.id}',false)" style="width:30px;height:30px;border-radius:50%;border:1.5px dashed var(--bor);background:none;font-size:18px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>`
+      }
+    </div>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div style="background:linear-gradient(135deg,var(--pri),var(--acc));color:#fff;padding:16px;display:flex;align-items:center;gap:12px;flex-shrink:0">
+      <button onclick="closeDayDetail()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;padding:8px 12px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">‹</button>
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:700">${d.toLocaleDateString('en',{weekday:'long',month:'long',day:'numeric'})}</div>
+        ${isT?`<div style="font-size:12px;opacity:.85;margin-top:2px">✨ Today</div>`:''}
+      </div>
+    </div>
+    ${sd?`<div style="padding:12px 16px;background:#FFF3E8;border-bottom:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:14px;font-weight:700;color:#8B4513">${sd.emoji} ${sd.label}</span>
+      <button onclick="rmBakeStep('${ds}')" style="background:none;border:none;font-size:14px;cursor:pointer;color:#8B4513">🗑️ Remove</button>
+    </div>`:''}
+    <div style="background:var(--sur);overflow-y:auto;flex:1">
+      ${slotsHtml}
+      <div style="padding:12px 16px;border-bottom:1px solid var(--bor)">
+        <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);margin-bottom:6px">Day Note</label>
+        <input type="text" style="width:100%;padding:9px 12px;border:1.5px solid var(--bor);border-radius:8px;font-size:14px;background:var(--bg);color:var(--txt)" placeholder="📝 Notes..." value="${esc(day.note||'')}" onchange="saveDNote('${ds}',this.value)">
+      </div>
+    </div>
+    <div style="height:16px"></div>
+  `;
+}
+
+function closeDayDetail(){
+  calDayDetail=null;
+  renderCalendar();
+}
+
+function rmBakeStep(ds){
+  if(!confirm('Remove this bake step from this day?'))return;
+  db.ref('/calendar/'+ds+'/sourdough').remove();
+  if(calDayDetail)renderDayDetail(ds);
 }
 
 function dCardHtml(ds){
@@ -1269,7 +1355,7 @@ const GLIST_COLORS=[
   {id:"teal",bg:"#D5F0EE",txt:"#1A6B65"},{id:"green",bg:"#D5F5E3",txt:"#1E8449"},
   {id:"yellow",bg:"#FDFBE8",txt:"#7D6608"},{id:"orange",bg:"#F5E8D5",txt:"#8B4513"},
 ];
-let newGColor="pink",newGEmoji="🛒",activeGListId=null;
+let newGColor="pink",newGEmoji="🛒",activeGListId=null,activeTodoId=null;
 
 function renderGrocery(){
   const el=document.getElementById("g-body");if(!el)return;
@@ -1298,11 +1384,15 @@ function glistTileHtml(id,l){
   </div>`;
 }
 function openGList(id){
+  // If a sub-modal was open, close it
+  if(document.getElementById('m-ov').classList.contains('open'))closeModal();
   activeGListId=id;const l=groceryLists[id];if(!l)return;
   const c=GLIST_COLORS.find(c=>c.id===l.color)||GLIST_COLORS[0];
   const items=l.items||[],unc=items.filter(i=>!i.checked),chk=items.filter(i=>i.checked);
-  document.getElementById("m-title").textContent=(l.emoji||"🛒")+" "+esc(l.name);
-  document.getElementById("m-body").innerHTML=
+  // Set header style based on list color
+  document.getElementById("list-ohdr").style.background=c.txt;
+  document.getElementById("list-title").innerHTML=(l.emoji||"🛒")+" "+esc(l.name);
+  document.getElementById("list-inner").innerHTML=
     `<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
       <button class="btn btn-p btn-sm" onclick="openAddGItemModal()">+ Add Item</button>
       <button class="btn btn-s btn-sm" onclick="openAddFromListModal('${id}')">📋 From list</button>
@@ -1317,7 +1407,7 @@ function openGList(id){
     +(!items.length?`<div style="text-align:center;color:var(--mut);padding:24px 0;font-size:14px">No items yet — tap + to add!</div>`
       :`<div>${unc.map(item=>gItemHtml(item,items.indexOf(item),id,l.shopping)).join("")}${chk.length?`<div style="padding:10px 0 4px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase">Got it ✓ (${chk.length})</div>${chk.map(item=>gItemHtml(item,items.indexOf(item),id,l.shopping)).join("")}`:""}</div>`)
     +`<div style="height:8px"></div>`;
-  showModal();
+  showListView();
 }
 function gItemHtml(item,idx,id,shopping){
   if(shopping)return `<div style="display:flex;align-items:center;gap:14px;padding:16px;border-bottom:1px solid var(--bor)"><button style="width:36px;height:36px;border-radius:50%;border:2px solid ${item.checked?"var(--ok)":"var(--bor)"};background:${item.checked?"var(--ok)":"none"};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0" onclick="togGItem('${id}',${idx})">${item.checked?"✓":""}</button><div style="flex:1;min-width:0"><div style="font-size:17px;font-weight:${item.checked?"400":"700"};color:${item.checked?"var(--mut)":"var(--txt)"};${item.checked?"text-decoration:line-through;":""}">${esc(item.name)}</div>${item.source?`<div style="font-size:11px;color:var(--mut);margin-top:2px">from ${esc(item.source)}</div>`:""}</div><span style="font-size:14px;color:var(--mut);flex-shrink:0">${esc(item.qty||"")}</span></div>`;
@@ -1520,14 +1610,16 @@ function doNewTodo(){
 }
 
 function openTodo(id){
+  if(document.getElementById('m-ov').classList.contains('open'))closeModal();
   activeTodoId=id;
   const t=todos[id];if(!t)return;
   const items=t.items||[];
   const unc=items.filter(i=>!i.checked);
   const chk=items.filter(i=>i.checked);
   const c=TODO_COLORS.find(col=>col.id===t.color)||TODO_COLORS[0];
-  document.getElementById('m-title').textContent=esc(t.name);
-  document.getElementById('m-body').innerHTML=`
+  document.getElementById('list-ohdr').style.background=c.txt;
+  document.getElementById('list-title').innerHTML=esc(t.name);
+  document.getElementById('list-inner').innerHTML=`
     <div class="quick-add-row" style="margin:0 -16px 14px;padding:10px 16px;background:${c.bg}">
       <input type="text" id="todo-add-in" placeholder="Add an item..." onkeydown="if(event.key==='Enter')doAddTodoItem()" style="background:rgba(255,255,255,.7)">
       <button class="btn btn-sm" style="background:${c.txt};color:#fff;border:none" onclick="doAddTodoItem()">Add</button>
@@ -1543,7 +1635,7 @@ function openTodo(id){
     ${chk.length?`<button class="btn btn-s btn-full" onclick="clearTodoDone()" style="margin-top:10px">Clear completed (${chk.length})</button>`:''}
     <div style="height:8px"></div>
   `;
-  showModal();
+  showListView();
   setTimeout(()=>document.getElementById('todo-add-in')?.focus(),300);
 }
 
@@ -1621,6 +1713,137 @@ async function saveBakeryLog(rid){
   alert('Bake logged! 🍞');
 }
 
+
+// ============================================================
+// CUSTOM BAKE SCHEDULE EDITOR
+// ============================================================
+const SCHEDULE_EMOJIS=['🌾','🥣','🔄','🔥','💧','🧊','⏰','🌡️','🥖','✂️','🫙','⚗️'];
+
+function openEditScheduleModal(){
+  document.getElementById('m-title').textContent='✏️ Edit Bake Schedule';
+  renderScheduleModal();
+  showModal();
+}
+
+function renderScheduleModal(){
+  const sorted=[...SD].sort((a,b)=>a.offset-b.offset);
+  document.getElementById('m-body').innerHTML=`
+    <p style="font-size:13px;color:var(--mut);margin-bottom:14px">Build your custom bake schedule. "0" = bake day, negative numbers = days before.</p>
+    <div id="sched-list">
+      ${sorted.map((step,idx)=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--bor)">
+          <span style="font-size:20px">${step.emoji}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:700;color:var(--txt)">${esc(step.label)}</div>
+            <div style="font-size:12px;color:var(--mut)">${step.offset===0?'Bake Day':step.offset+' days before'}</div>
+          </div>
+          <button onclick="editScheduleStep(${idx})" style="background:none;border:none;font-size:16px;cursor:pointer;padding:4px">✏️</button>
+          <button onclick="deleteScheduleStep(${idx})" style="background:none;border:none;font-size:16px;cursor:pointer;padding:4px;color:var(--err)">🗑️</button>
+        </div>
+      `).join('')}
+    </div>
+    <button class="btn btn-s btn-full" onclick="addScheduleStep()" style="margin-top:12px">+ Add Step</button>
+    <button class="btn btn-s btn-full" onclick="resetSchedule()" style="margin-top:8px">↩️ Reset to Default</button>
+    <button class="btn btn-p btn-full" onclick="closeModal()" style="margin-top:8px">Done</button>
+    <div style="height:8px"></div>
+  `;
+}
+
+function editScheduleStep(idx){
+  const sorted=[...SD].sort((a,b)=>a.offset-b.offset);
+  const step=sorted[idx];
+  // Find real index in SD
+  const realIdx=SD.findIndex(s=>s.offset===step.offset&&s.label===step.label);
+  document.getElementById('m-title').textContent='✏️ Edit Step';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg">
+      <label class="fl">Emoji</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        ${SCHEDULE_EMOJIS.map(e=>`<span style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid ${e===step.emoji?'var(--acc)':'transparent'};background:${e===step.emoji?'var(--acc-lt)':'none'}" onclick="selSchedEmoji('${e}',this)">${e}</span>`).join('')}
+      </div>
+      <input type="text" class="fi" id="step-emoji-val" value="${step.emoji}" placeholder="Or type emoji" style="margin-top:4px">
+    </div>
+    <div class="fg">
+      <label class="fl">Step Name</label>
+      <input type="text" class="fi" id="step-label" value="${esc(step.label)}" placeholder="e.g. Feed Starter">
+    </div>
+    <div class="fg">
+      <label class="fl">Days (0 = bake day, -1 = day before, -3 = 3 days before)</label>
+      <input type="number" class="fi" id="step-offset" value="${step.offset}" max="0" min="-14">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="openEditScheduleModal()" style="flex:1">← Back</button>
+      <button class="btn btn-p" onclick="saveScheduleStep(${realIdx})" style="flex:1">Save Step</button>
+    </div>
+  `;
+}
+
+function selSchedEmoji(e,el){
+  el.parentElement.querySelectorAll('span').forEach(s=>{s.style.border='2px solid transparent';s.style.background='none';});
+  el.style.border='2px solid var(--acc)';el.style.background='var(--acc-lt)';
+  const inp=document.getElementById('step-emoji-val');if(inp)inp.value=e;
+}
+
+function saveScheduleStep(realIdx){
+  const emoji=document.getElementById('step-emoji-val').value.trim()||SD[realIdx].emoji;
+  const label=document.getElementById('step-label').value.trim();
+  const offset=parseInt(document.getElementById('step-offset').value)||0;
+  if(!label){alert('Enter a step name.');return;}
+  const newSD=[...SD];
+  newSD[realIdx]={emoji,label,offset};
+  db.ref('/starter/schedule').set(newSD);
+  openEditScheduleModal();
+}
+
+function addScheduleStep(){
+  document.getElementById('m-title').textContent='+ Add Step';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg">
+      <label class="fl">Emoji</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        ${SCHEDULE_EMOJIS.map((e,i)=>`<span style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid ${i===0?'var(--acc)':'transparent'};background:${i===0?'var(--acc-lt)':'none'}" onclick="selSchedEmoji('${e}',this)">${e}</span>`).join('')}
+      </div>
+      <input type="text" class="fi" id="step-emoji-val" value="${SCHEDULE_EMOJIS[0]}" placeholder="Or type emoji" style="margin-top:4px">
+    </div>
+    <div class="fg">
+      <label class="fl">Step Name</label>
+      <input type="text" class="fi" id="step-label" placeholder="e.g. Second Feed">
+    </div>
+    <div class="fg">
+      <label class="fl">Days (0 = bake day, -1 = day before)</label>
+      <input type="number" class="fi" id="step-offset" value="-1" max="0" min="-14">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="openEditScheduleModal()" style="flex:1">← Back</button>
+      <button class="btn btn-p" onclick="doAddScheduleStep()" style="flex:1">Add Step</button>
+    </div>
+  `;
+}
+
+function doAddScheduleStep(){
+  const emoji=document.getElementById('step-emoji-val').value.trim()||'🌾';
+  const label=document.getElementById('step-label').value.trim();
+  const offset=parseInt(document.getElementById('step-offset').value)||0;
+  if(!label){alert('Enter a step name.');return;}
+  const newSD=[...SD,{emoji,label,offset}];
+  db.ref('/starter/schedule').set(newSD);
+  openEditScheduleModal();
+}
+
+function deleteScheduleStep(idx){
+  const sorted=[...SD].sort((a,b)=>a.offset-b.offset);
+  const step=sorted[idx];
+  if(!confirm('Delete step "'+step.label+'"?'))return;
+  const newSD=SD.filter(s=>!(s.offset===step.offset&&s.label===step.label));
+  db.ref('/starter/schedule').set(newSD);
+  openEditScheduleModal();
+}
+
+function resetSchedule(){
+  if(!confirm('Reset to default schedule?\nFeed Starter → Mix Dough → Shape → Bake'))return;
+  db.ref('/starter/schedule').set(SD_DEFAULT);
+}
+
 // ============================================================
 // STARTER
 // ============================================================
@@ -1656,10 +1879,17 @@ function renderStarter(){
       </div>
     </div>
     <div style="margin:0 16px">
-      <p class="sub-h">🗓️ Set Bake Day</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <p class="sub-h" style="margin:0">🗓️ My Bake Schedule</p>
+        <button class="btn btn-g btn-sm" onclick="openEditScheduleModal()">✏️ Edit Steps</button>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+        ${[...SD].sort((a,b)=>a.offset-b.offset).map(s=>`<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--bor);font-size:13px"><span style="color:var(--mut);width:38px;flex-shrink:0;font-size:12px">${s.offset===0?'Bake':s.offset+'d'}</span><span>${s.emoji} ${s.label}</span></div>`).join('')}
+      </div>
+      <label class="fl">Set Bake Day</label>
       <input type="date" id="bd-in" value="${starterD.bakeDay||fmtD(new Date())}" min="${fmtD(new Date())}" onchange="prevBS(this.value)">
       <div id="bd-prev" style="margin-top:10px">${starterD.bakeDay?renderBS(starterD.bakeDay):''}</div>
-      <button class="btn btn-p btn-full" onclick="confBakeDay()" style="margin-top:10px">Set Schedule on Calendar</button>
+      <button class="btn btn-p btn-full" onclick="confBakeDay()" style="margin-top:10px">📅 Set on Calendar</button>
       ${starterD.bakeDay?`<button class="btn btn-s btn-full" onclick="clrBakeDay()" style="margin-top:8px">Clear Schedule</button>`:''}
     </div>
     <div style="margin:16px 16px 0">
@@ -1685,10 +1915,27 @@ function renderBS(bakeDay){
 }
 function prevBS(v){const el=document.getElementById('bd-prev');if(el&&v)el.innerHTML=renderBS(v);}
 function confBakeDay(){
-  const v=document.getElementById('bd-in')?.value;if(!v)return;
+  const el=document.getElementById('bd-in');
+  const v=el?el.value:'';
+  if(!v){alert('Please select a bake day.');return;}
+  // Save bake day to starter
   db.ref('/starter').update({bakeDay:v});
+  // Write each prep step to calendar
   const bd=new Date(v+'T12:00:00');
-  SD.forEach(s=>{const d=addDays(bd,s.offset);db.ref('/calendar/'+fmtD(d)+'/sourdough').set({emoji:s.emoji,label:s.label});});
+  const writes=[];
+  SD.forEach(s=>{
+    const d=addDays(bd,s.offset);
+    const ds=fmtD(d);
+    writes.push(db.ref('/calendar/'+ds+'/sourdough').set({emoji:s.emoji,label:s.label}));
+  });
+  Promise.all(writes).then(()=>{
+    alert('Bake schedule set! \n\nCheck your calendar — prep steps have been added to each day.');
+    if(curView==='calendar'){calDayDetail=null;renderCalendar();}
+    if(curView==='dashboard')renderDash();
+  }).catch(err=>{
+    console.error('Bake schedule error:',err);
+    alert('Error saving schedule. Please check your connection.');
+  });
 }
 function clrBakeDay(){
   if(!confirm('Clear the bake day schedule and remove from calendar?'))return;
@@ -1697,6 +1944,8 @@ function clrBakeDay(){
     SD.forEach(s=>{const d=addDays(bd,s.offset);db.ref('/calendar/'+fmtD(d)+'/sourdough').remove();});
   }
   db.ref('/starter').update({bakeDay:null});
+  if(curView==='calendar'){calDayDetail=null;renderCalendar();}
+  if(curView==='dashboard')renderDash();
 }
 function feedStarter(){db.ref('/starter').update({lastFed:new Date().toISOString()});}
 function setLoc(loc){db.ref('/starter').update({location:loc});}
@@ -1747,6 +1996,18 @@ function doLogBake(){
 // ============================================================
 // MODAL
 // ============================================================
+
+// Full-screen list view (for grocery and todo lists)
+function showListView(){
+  document.getElementById('list-ov').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeListView(){
+  document.getElementById('list-ov').classList.remove('open');
+  document.body.style.overflow='';
+  activeGListId=null;activeTodoId=null;
+}
+
 function showModal(){document.getElementById('m-ov').classList.add('open');document.body.style.overflow='hidden';}
 function closeModal(){document.getElementById('m-ov').classList.remove('open');document.body.style.overflow='';pendingPhoto=null;}
 function handleOvClick(e){if(e.target===document.getElementById('m-ov'))closeModal();}
