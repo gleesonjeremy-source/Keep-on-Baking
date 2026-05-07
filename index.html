@@ -60,7 +60,7 @@
     .back-btn{border:none;background:rgba(255,255,255,.2);color:#fff;padding:8px 14px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;}
 
     /* MODAL */
-    .m-ov{position:fixed;inset:0;background:rgba(61,26,38,.5);z-index:200;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s;}
+    .m-ov{position:fixed;inset:0;background:rgba(61,26,38,.5);z-index:400;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s;}
     .m-ov.open{opacity:1;pointer-events:all;}
     .modal{background:var(--bg);border-radius:24px 24px 0 0;width:100%;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);padding-bottom:calc(16px+env(safe-area-inset-bottom));}
     .m-ov.open .modal{transform:translateY(0);}
@@ -168,7 +168,7 @@
     .rcard-name{font-size:14px;font-weight:700;color:var(--txt);margin-bottom:5px;line-height:1.3;}
     .heart-btn{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.9);border:none;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15);}
     .rot-badge{font-size:10px;color:var(--acc);font-weight:700;margin-top:4px;}
-    .r-det-img{width:calc(100%+32px);margin:0 -16px;max-height:220px;object-fit:cover;display:block;margin-bottom:14px;}
+    .r-det-img{width:calc(100% + 32px);margin:0 -16px;max-height:220px;object-fit:cover;display:block;margin-bottom:14px;}
 
     /* IDEAS */
     .idea-grid{padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -431,12 +431,10 @@ const TODO_COLORS=[
 let recipes={},calD={},ideas={},groceryLists={};
 let starterD={lastFed:null,location:'counter',tempNote:'',bakeDay:null};
 let bakeLog={},shopItems=[],shopStaples=[];
-let curView='dashboard',wkOff=0,rFilt='all',rTab='recipes',shopTab='list',todoTab=null,calDayDetail=null,newTodoColor='pink';
+let curView='dashboard',wkOff=0,rFilt='all',rTab='recipes',shopTab='list',todoTab=null,calDayDetail=null;
 let calMonth=new Date().getMonth(),calYear=new Date().getFullYear();
-let todos={},weeklyD={template:[],current:[],weekKey:null},combineSelections=[];
+let todos={},newTodoColor='pink';
 let pendingPhoto=null,rFormCat=null,rFormServ=4,editingRid=null,addShopRid=null;
-let calPickRid=null,calPickStep=1,calPickDs=null;
-let activeTripId=null;
 
 // ============================================================
 // FIREBASE LISTENERS
@@ -460,6 +458,8 @@ function initFB(){
   });
   db.ref('/starter').on('value',s=>{
     starterD=Object.assign({lastFed:null,location:'counter',tempNote:'',bakeDay:null},s.val()||{});
+    // sync custom schedule if user has saved one
+    if(s.val()&&s.val().schedule) SD=[...s.val().schedule];
     if(document.getElementById('s-ov').classList.contains('open'))renderStarter();
     if(curView==='dashboard')renderDash();
   });
@@ -570,6 +570,11 @@ function renderDash(){
   const shopSub=gListCount>0?`${activeItems} item${activeItems!==1?'s':''} remaining across ${gListCount} list${gListCount!==1?'s':''}`:'Tap to create a list';
   const todoActive=Object.values(todos).reduce((sum,t)=>sum+(t.items||[]).filter(i=>!i.checked).length,0);
 
+  // Detect tonight's dinner for the dashboard card
+  const todayDay=calD[today]||{};
+  const dinnerRaw=todayDay.dinner;
+  const dinnerV=dinnerRaw?(typeof dinnerRaw==='object'?{name:'Recipe',emoji:'🍽️',id:null}:getMealDisplay(dinnerRaw)):null;
+
   const wkHtml=getWeekDates(0).map(ds=>{
     const d=new Date(ds+'T12:00:00'),isT=ds===today;
     const day=calD[ds]||{};
@@ -603,6 +608,14 @@ function renderDash(){
       <div class="quote-text">"${quote.text}"</div>
       <div class="quote-ref">— ${quote.ref}</div>
     </div>
+    ${dinnerV?`<div class="tonight-card">
+      <div class="t-lbl">Tonight's Meal</div>
+      <div class="t-recipe">${dinnerV.emoji||'🍽️'} ${esc(dinnerV.name)}</div>
+      <div class="t-acts">
+        <button class="t-btn t-btn-w" onclick="openSlotPicker('${today}','dinner',true)">✏️ Change</button>
+        ${dinnerV.id?`<button class="t-btn t-btn-o" onclick="openRecipeDetail('${dinnerV.id}')">📖 Recipe</button>`:''}
+      </div>
+    </div>`:''}
 
     <div class="shop-card" onclick="openShoppingCard()">
       <div class="shop-card-left">
@@ -752,7 +765,7 @@ function openRecipeDetail(id){
   const r=recipes[id];if(!r)return;
   const c=CM[r.category];
   const base=r.servings||4;
-  document.getElementById('m-title').textContent=esc(r.name);
+  document.getElementById('m-title').textContent=r.name;
   document.getElementById('m-body').innerHTML=`
     ${r.photoURL?`<img class="r-det-img" src="${r.photoURL}">`:''}
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
@@ -937,6 +950,10 @@ function openRecipeForm(id){
       <input type="checkbox" id="rrot" ${r&&r.regularRotation?'checked':''} style="width:20px;height:20px;accent-color:var(--acc)">
       <label for="rrot" style="font-size:14px;font-weight:700;color:var(--txt);cursor:pointer">⭐ Regular rotation</label>
     </div>
+    <div class="fg" style="display:flex;align-items:center;gap:10px">
+      <input type="checkbox" id="rbakery" ${r&&r.bakeryMode?'checked':''} style="width:20px;height:20px;accent-color:var(--acc)">
+      <label for="rbakery" style="font-size:14px;font-weight:700;color:var(--txt);cursor:pointer">🏪 Bakery mode</label>
+    </div>
     <div style="display:flex;gap:8px;margin-top:8px;padding-bottom:8px">
       <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
       <button class="btn btn-p" id="sbtn" onclick="saveRF()" style="flex:1">Save Recipe</button>
@@ -963,7 +980,7 @@ function handlePhoto(e){
     zone.innerHTML='';
     const img=document.createElement('img');
     img.src=ev.target.result;
-    img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
+    img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none';
     zone.appendChild(img);if(inp)zone.appendChild(inp);
   };
   reader.readAsDataURL(file);
@@ -1066,7 +1083,7 @@ async function saveIdea(id){
 
 function openIdeaDetail(id){
   const idea=ideas[id];if(!idea)return;
-  document.getElementById('m-title').textContent=esc(idea.name);
+  document.getElementById('m-title').textContent=idea.name;
   document.getElementById('m-body').innerHTML=`
     ${idea.photoURL?`<img class="r-det-img" src="${idea.photoURL}">`:''}
     ${idea.notes?`<p style="font-size:15px;line-height:1.6;color:var(--txt);margin-bottom:16px">${esc(idea.notes)}</p>`:''}
@@ -1102,38 +1119,6 @@ function deleteIdea(id){
   db.ref('/ideas/'+id).remove();closeModal();
 }
 
-
-// MOVE MEAL
-let _moveMeal=null,_moveSlot=null,_moveVal=null;
-function openMoveMeal(ds,slot){
-  _moveMeal=ds;_moveSlot=slot;_moveVal=calD[ds]?.[slot];
-  const meal=getMealDisplay(_moveVal);
-  const dates=getWeekDates(wkOff);const today=fmtD(new Date());
-  document.getElementById('m-title').textContent='📅 Move "'+esc(meal?.name||'meal')+'"';
-  document.getElementById('m-body').innerHTML=`
-    <p style="font-size:13px;color:var(--mut);margin-bottom:12px">Move to which day?</p>
-    <div class="day-pick-grid">
-      ${dates.filter(d=>d!==ds).map(d2=>{const dobj=new Date(d2+'T12:00:00'),isT=d2===today;return`<button class="day-pick-btn ${isT?'today-d':''}" onclick="pickMoveDay('${d2}')"><div>${dobj.toLocaleDateString('en',{weekday:'short'})}</div><div style="font-size:10px;opacity:.7">${dobj.toLocaleDateString('en',{month:'short',day:'numeric'})}</div></button>`;}).join('')}
-    </div>
-    <p style="font-size:13px;color:var(--mut);margin-bottom:8px;margin-top:4px">To which slot?</p>
-    <div class="slot-pick-grid" id="move-slots">
-      ${SLOTS.map(s=>`<button class="slot-pick-btn ${s.id===slot?'sel':''}" id="mvs_${s.id}" onclick="pickMoveSlot('${s.id}')">${s.label}</button>`).join('')}
-    </div>
-    <div style="height:8px"></div>`;
-  window._selMoveSlot=slot;
-  showModal();
-}
-function pickMoveSlot(s){
-  window._selMoveSlot=s;
-  SLOTS.forEach(sl=>{const el=document.getElementById('mvs_'+sl.id);if(el){el.style.background='';el.style.borderColor='';}});
-  const el=document.getElementById('mvs_'+s);if(el){el.style.background='var(--acc-lt)';el.style.borderColor='var(--acc)';}
-}
-function pickMoveDay(targetDs){
-  const targetSlot=window._selMoveSlot||_moveSlot;
-  db.ref('/calendar/'+targetDs+'/'+targetSlot).set(_moveVal);
-  db.ref('/calendar/'+_moveMeal+'/'+_moveSlot).remove();
-  closeModal();
-}
 
 // ============================================================
 // CALENDAR
@@ -1253,39 +1238,6 @@ function rmBakeStep(ds){
   if(calDayDetail)renderDayDetail(ds);
 }
 
-function dCardHtml(ds){
-  const d=new Date(ds+'T12:00:00'),isT=ds===fmtD(new Date());
-  const day=calD[ds]||{},sd=day.sourdough;
-  const slotsHtml=SLOTS.map(slot=>{
-    const slotVal=day[slot.id];
-    const meal=getMealDisplay(slotVal);
-    return `<div class="mslot">
-      <span class="mslot-lbl">${slot.label}</span>
-      ${meal
-        ?(meal.isCustom
-          ?`<span class="mslot-val" style="color:var(--mut);font-weight:600;font-style:italic">${esc(meal.name)}</span>
-             <button class="s-rm" onclick="rmSlot('${ds}','${slot.id}')">×</button>`
-          :`<span class="mslot-val" onclick="openRecipeDetail('${meal.id}')">${esc(meal.name)}</span>
-             <button class="s-rm" onclick="rmSlot('${ds}','${slot.id}')">×</button>`)
-        :`<span class="mslot-emp">—</span>
-           <button class="s-add" onclick="openSlotPicker('${ds}','${slot.id}',false)">+</button>`
-      }
-    </div>`;
-  }).join('');
-  return `<div class="dcard">
-    <div class="dhdr">
-      <span class="dname ${isT?'tod':''}">${d.toLocaleDateString('en',{weekday:'long'})}${isT?' · Today':''}</span>
-      <div style="display:flex;align-items:center;gap:8px">
-        ${sd?`<span class="sd-badge">${sd.emoji} ${sd.label}</span>`:''}
-        <span class="ddate">${d.toLocaleDateString('en',{month:'short',day:'numeric'})}</span>
-      </div>
-    </div>
-    ${slotsHtml}
-    <div class="dnote-row">
-      <input type="text" class="dnote-in" placeholder="📝 Day note..." value="${esc(day.note||'')}" onchange="saveDNote('${ds}',this.value)">
-    </div>
-  </div>`;
-}
 
 function chWk(d){wkOff+=d;renderCalendar();}
 function saveDNote(ds,v){db.ref('/calendar/'+ds+'/note').set(v||null);}
@@ -1304,12 +1256,13 @@ function openSlotPicker(ds,slot,isEdit){
   const slotDef=SLOTS.find(s=>s.id===slot);
   const allowed=slotDef?slotDef.cats:[];
   const filtered=Object.entries(recipes).filter(([,r])=>allowed.includes(r.category));
+  const customVal=(isEdit&&String(calD[ds]?.[slot]||'').startsWith('custom:'))?calD[ds][slot].slice(7):'';
   document.getElementById('m-title').textContent='Add to '+(slotDef?.label||slot);
   document.getElementById('m-body').innerHTML=`
     <div style="margin-bottom:16px">
       <label class="fl">Quick add — type anything</label>
       <div style="display:flex;gap:8px">
-        <input type="text" class="fi" id="custom-meal-in" placeholder="e.g. Eating out, Pizza night, Leftovers..." style="flex:1;font-size:15px">
+        <input type="text" class="fi" id="custom-meal-in" placeholder="e.g. Eating out, Pizza night, Leftovers..." value="${esc(customVal)}" style="flex:1;font-size:15px">
         <button class="btn btn-p" onclick="addCustomMeal('${ds}','${slot}')">Add</button>
       </div>
     </div>
@@ -1685,33 +1638,7 @@ function deleteTodo(e,id){
 }
 
 
-// BAKERY LOG
-function openBakeryLog(rid){
-  document.getElementById('m-title').textContent='🏪 Log a Bake';
-  document.getElementById('m-body').innerHTML=`
-    <div class="fg"><label class="fl">Date</label><input type="date" id="bl-date" value="${fmtD(new Date())}"></div>
-    <div class="fg"><label class="fl">How many batches/loaves?</label><input type="number" class="fi" id="bl-batches" placeholder="e.g. 2" min="1" value="1"></div>
-    <div class="fg"><label class="fl">Rating</label><div style="display:flex;gap:6px" id="star-row">${[1,2,3,4,5].map(i=>`<button style="font-size:24px;cursor:pointer;background:none;border:none;padding:2px" onclick="setStars(${i})" id="star-${i}">☆</button>`).join('')}</div></div>
-    <div class="fg"><label class="fl">Conditions</label><input type="text" class="fi" id="bl-cond" placeholder="e.g. 475°F, 48hr cold proof, warm kitchen"></div>
-    <div class="fg"><label class="fl">Notes — what worked, what to change</label><textarea class="fta" id="bl-notes" placeholder="Observations, results, improvements for next time..."></textarea></div>
-    <div style="display:flex;gap:8px;padding-bottom:8px"><button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button><button class="btn btn-p" onclick="saveBakeryLog('${rid}')" style="flex:1">Save Log</button></div>`;
-  window._blStars=0;showModal();
-}
-function setStars(n){
-  window._blStars=n;
-  [1,2,3,4,5].forEach(i=>{const el=document.getElementById('star-'+i);if(el)el.textContent=i<=n?'⭐':'☆';});
-}
-async function saveBakeryLog(rid){
-  const date=document.getElementById('bl-date').value;
-  const batches=document.getElementById('bl-batches').value||'1';
-  const conditions=document.getElementById('bl-cond').value.trim();
-  const notes=document.getElementById('bl-notes').value.trim();
-  const stars=window._blStars||0;
-  if(!notes&&!stars){alert('Add at least a rating or some notes.');return;}
-  await db.ref('/recipes/'+rid+'/bakeHistory').push({date,batches,conditions,notes,stars,loggedAt:new Date().toISOString()});
-  closeModal();
-  alert('Bake logged! 🍞');
-}
+
 
 
 // ============================================================
@@ -2016,8 +1943,9 @@ function handleOvClick(e){if(e.target===document.getElementById('m-ov'))closeMod
 // IMAGE COMPRESSION
 // ============================================================
 function compressImg(file,maxW,quality){
-  return new Promise(resolve=>{
+  return new Promise((resolve,reject)=>{
     const img=new Image(),url=URL.createObjectURL(file);
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Image load failed'));};
     img.onload=()=>{
       let w=img.width,h=img.height;
       if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
