@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Keep On Baking">
@@ -38,12 +38,12 @@
     .starter-btn{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 
     /* CONTENT */
-    .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nh)+8px);min-height:0;}
+    .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:24px;min-height:0;}
     .view{display:none;}
     .view.active{display:block;}
 
     /* NAV */
-    .bnav{position:fixed;bottom:0;left:0;right:0;height:var(--nh);background:var(--sur);border-top:1.5px solid var(--bor);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
+    .bnav{height:calc(var(--nh) + env(safe-area-inset-bottom));background:var(--sur);border-top:1.5px solid var(--bor);display:flex;z-index:10;padding-bottom:env(safe-area-inset-bottom);flex-shrink:0;}
     .nbtn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;color:var(--mut);font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;}
     .nbtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
     .nbtn.active{color:var(--acc);}.nbtn.active svg{stroke:var(--acc);}
@@ -142,7 +142,7 @@
     .t-btn-w{background:#fff;color:var(--pri);}
     .t-btn-o{background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.5);}
 
-    .wk-card{margin:10px 16px 0;background:var(--sur);border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(140,34,82,.1);border:1px solid var(--bor);}
+    .wk-card{margin:10px 16px 16px;background:var(--sur);border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(140,34,82,.1);border:1px solid var(--bor);}
     .wk-row{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--bg);min-height:46px;gap:10px;}
     .wk-row:last-child{border-bottom:none;}
     .wk-day{font-size:12px;font-weight:700;color:var(--mut);width:32px;flex-shrink:0;}
@@ -1422,6 +1422,7 @@ function openAddGItemModal(){
     `<div class="fg"><label class="fl">Item Name</label><input type="text" class="fi" id="gi-name" placeholder="e.g. Bread flour" onkeydown="if(event.key==='Enter')doAddGItem()"></div>
     <div class="fg"><label class="fl">Quantity (optional)</label><input type="text" class="fi" id="gi-qty" placeholder="e.g. 5 lbs"></div>
     <div style="display:flex;gap:8px"><button class="btn btn-s" onclick="openGList('${activeGListId}')" style="flex:1">← Back</button><button class="btn btn-p" onclick="doAddGItem()" style="flex:1">Add</button></div>`;
+  showModal();
   setTimeout(()=>document.getElementById("gi-name")?.focus(),300);
 }
 function doAddGItem(){
@@ -1490,37 +1491,104 @@ function doAddRecipeToGList(listId,rid){
 }
 
 function renderTodos(){
-  const el=document.getElementById('t-body');
-  const list=Object.entries(todos).sort((a,b)=>(b[1].createdAt||'').localeCompare(a[1].createdAt||''));
-  const totalActive=list.reduce((sum,[,t])=>sum+(t.items||[]).filter(i=>!i.checked).length,0);
+  const el=document.getElementById('t-body');if(!el)return;
+  const allItems=[];
+  Object.entries(todos).sort((a,b)=>(b[1].createdAt||'').localeCompare(a[1].createdAt||'')).forEach(([tid,t])=>{
+    (t.items||[]).forEach((item,idx)=>{
+      allItems.push({tid,idx,text:item.text||item.name||'',checked:!!item.checked,listName:t.name,listColor:t.color||'pink'});
+    });
+  });
+  const unc=allItems.filter(i=>!i.checked);
+  const chk=allItems.filter(i=>i.checked);
+  const multiList=Object.keys(todos).length>1;
   el.innerHTML=`
-    <div style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--pri)">My Lists</div>
-        ${totalActive>0?`<div style="font-size:13px;color:var(--mut)">${totalActive} item${totalActive!==1?'s':''} remaining</div>`:''}
-      </div>
-      <button class="btn btn-p btn-sm" onclick="openNewTodoModal()">+ New List</button>
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--sur);border-bottom:2px solid var(--bor);position:sticky;top:0;z-index:2">
+      <input type="text" id="combined-add-in" placeholder="Add an item..."
+        style="flex:1;padding:13px 14px;border:2px solid var(--bor);border-radius:12px;font-size:17px;background:var(--bg);color:var(--txt)"
+        onkeydown="if(event.key==='Enter')doAddCombinedItem()">
+      <button onclick="doAddCombinedItem()"
+        style="padding:13px 18px;background:var(--acc);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;flex-shrink:0">Add</button>
     </div>
-    ${!list.length
-      ?`<div class="empty"><div class="ei">✅</div><p>No lists yet.<br>Tap + to create your first list!<br><span style="font-size:13px">Thrift store, errands, projects...</span></p></div>`
-      :`<div style="padding:0 0 16px">${list.map(([id,t])=>{
-          const c=TODO_COLORS.find(c=>c.id===t.color)||TODO_COLORS[0];
-          const unc=(t.items||[]).filter(i=>!i.checked).length;
-          const total=(t.items||[]).length;
-          return `<div class="todo-card" style="background:${c.bg};border-color:${c.bg}" onclick="openTodo('${id}')">
-            <div>
-              <div class="todo-name" style="color:${c.txt}">${esc(t.name)}</div>
-              <div class="todo-meta" style="color:${c.txt}">${unc} of ${total} remaining</div>
+    ${!allItems.length
+      ?`<div class="empty"><div class="ei">✅</div><p>Nothing here yet.<br>Add your first item above!</p></div>`
+      :`<div>
+          ${unc.map(item=>combinedItemHtml(item,multiList)).join('')}
+          ${chk.length?`
+            <div style="padding:10px 16px 4px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.6px">Done (${chk.length})</div>
+            ${chk.map(item=>combinedItemHtml(item,multiList)).join('')}
+            <div style="padding:12px 16px">
+              <button onclick="clearCombinedDone()" style="width:100%;padding:11px;background:var(--bg);color:var(--mut);border:1.5px solid var(--bor);border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Clear all done (${chk.length})</button>
             </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              ${unc===0&&total>0?`<span style="font-size:18px">🎉</span>`:''}
-              <button class="btn btn-sm" style="background:rgba(0,0,0,.1);color:${c.txt};border:none" onclick="deleteTodo(event,'${id}')">🗑️</button>
-            </div>
-          </div>`;
-        }).join('')}</div>`
+          `:''}
+        </div>`
     }
     <div style="height:16px"></div>
   `;
+}
+
+function combinedItemHtml(item,showList){
+  const c=TODO_COLORS.find(col=>col.id===item.listColor)||TODO_COLORS[0];
+  return `<div style="display:flex;align-items:center;min-height:60px;padding:14px 16px;border-bottom:1px solid var(--bor);gap:14px;background:${item.checked?'var(--bg)':'var(--sur)'}">
+    <button onclick="togCombinedItem('${item.tid}',${item.idx})"
+      style="width:30px;height:30px;border-radius:50%;border:2.5px solid ${item.checked?'var(--ok)':'var(--bor)'};background:${item.checked?'var(--ok)':'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0;transition:all .15s">
+      ${item.checked?'✓':''}
+    </button>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:18px;font-weight:${item.checked?'400':'600'};color:${item.checked?'var(--mut)':'var(--txt)'};${item.checked?'text-decoration:line-through;':''}line-height:1.3">${esc(item.text)}</div>
+      ${showList?`<div style="font-size:11px;color:${c.txt};background:${c.bg};padding:2px 8px;border-radius:10px;display:inline-block;margin-top:3px;font-weight:700">${esc(item.listName)}</div>`:''}
+    </div>
+    <button onclick="delCombinedItem('${item.tid}',${item.idx})"
+      style="width:36px;height:36px;border-radius:50%;border:none;background:none;font-size:22px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.5">×</button>
+  </div>`;
+}
+
+function doAddCombinedItem(){
+  const el=document.getElementById('combined-add-in');
+  const text=el?el.value.trim():'';
+  if(!text)return;
+  const sortedLists=Object.entries(todos).sort((a,b)=>(b[1].createdAt||'').localeCompare(a[1].createdAt||''));
+  if(!sortedLists.length){
+    const id='todo_'+Date.now();
+    const newList={name:'My List',color:'pink',items:[{text,checked:false}],createdAt:new Date().toISOString()};
+    todos[id]=newList;
+    db.ref('/todos/'+id).set(newList);
+  } else {
+    const [tid,t]=sortedLists[0];
+    const items=[...(t.items||[]),{text,checked:false}];
+    todos[tid]={...todos[tid],items};
+    db.ref('/todos/'+tid+'/items').set(items);
+  }
+  if(el)el.value='';
+  renderTodos();
+  const inp=document.getElementById('combined-add-in');
+  if(inp)inp.focus();
+}
+
+function togCombinedItem(tid,idx){
+  const t=todos[tid];if(!t)return;
+  const items=(t.items||[]).map((item,i)=>i===idx?{...item,checked:!item.checked}:item);
+  todos[tid]={...todos[tid],items};
+  db.ref('/todos/'+tid+'/items').set(items);
+  renderTodos();
+}
+
+function delCombinedItem(tid,idx){
+  const t=todos[tid];if(!t)return;
+  const items=(t.items||[]).filter((_,i)=>i!==idx);
+  todos[tid]={...todos[tid],items};
+  db.ref('/todos/'+tid+'/items').set(items);
+  renderTodos();
+}
+
+function clearCombinedDone(){
+  Object.entries(todos).forEach(([tid,t])=>{
+    const filtered=(t.items||[]).filter(i=>!i.checked);
+    if(filtered.length!==(t.items||[]).length){
+      todos[tid]={...todos[tid],items:filtered};
+      db.ref('/todos/'+tid+'/items').set(filtered);
+    }
+  });
+  renderTodos();
 }
 
 function openNewTodoModal(){
@@ -1559,7 +1627,6 @@ function doNewTodo(){
   const id='todo_'+Date.now();
   db.ref('/todos/'+id).set({name,color:newTodoColor,items:[],createdAt:new Date().toISOString()});
   closeModal();
-  setTimeout(()=>openTodo(id),400);
 }
 
 function openTodo(id){
