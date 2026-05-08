@@ -8,7 +8,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Keep On Baking">
   <title>Keep On Baking</title>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js">
+function confirmDeleteGList(id, name){
+  if(!confirm('Delete "' + name + '" and all its items?\nThis cannot be undone.'))return;
+  db.ref('/grocery/lists/'+id).remove();
+}
+</script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -297,6 +302,24 @@
     #list-ov .s-ohdr{display:flex;align-items:center;gap:12px;}
     #list-ov .title{flex:1;text-align:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:600;}
     #list-inner{padding:0;}
+
+    /* SHOPPING — NEW INLINE STORE LAYOUT */
+    .store-section{margin:12px 16px 0;border-radius:18px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.12);}
+    .store-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;}
+    .store-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;}
+    .store-count{font-size:12px;color:rgba(255,255,255,.8);font-weight:700;}
+    .store-menu-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.35);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .store-item-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.05);background:#fff;}
+    .store-item-row.done-row{background:#fafafa;}
+    .store-check-btn{width:28px;height:28px;border-radius:50%;border:2.5px solid;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;transition:all .2s;}
+    .store-item-text{flex:1;font-size:16px;font-weight:600;color:var(--txt);}
+    .store-item-text.done{text-decoration:line-through;color:var(--mut);font-weight:400;}
+    .store-item-qty{font-size:13px;color:var(--mut);flex-shrink:0;margin-right:4px;}
+    .store-del-btn{width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,.06);font-size:16px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .store-add-row{display:flex;gap:8px;padding:12px 14px;}
+    .store-add-input{flex:1;padding:11px 13px;border:1.5px solid rgba(0,0,0,.14);border-radius:10px;font-size:15px;background:rgba(255,255,255,.85);color:var(--txt);}
+    .store-add-input:focus{outline:none;border-color:rgba(0,0,0,.32);background:#fff;}
+    .store-clear-row{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 10px;}
   </style>
 </head>
 <body>
@@ -314,6 +337,7 @@
     <div class="view" id="view-calendar"><div id="c-body"></div></div>
     <div class="view" id="view-grocery"><div id="g-body"></div></div>
     <div class="view" id="view-todos"><div id="t-body"></div></div>
+    <div class="view" id="view-list"><div id="l-body"></div></div>
   </div>
   <nav class="bnav">
     <button class="nbtn active" data-v="dashboard" onclick="nav('dashboard')">
@@ -325,11 +349,11 @@
     <button class="nbtn" data-v="calendar" onclick="nav('calendar')">
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar
     </button>
-    <button class="nbtn" data-v="grocery" onclick="nav('grocery')">
-      <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Grocery
+    <button class="nbtn" data-v="list" onclick="nav('list')">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>List
     </button>
     <button class="nbtn" data-v="todos" onclick="nav('todos')">
-      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Lists
+      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Grocery
     </button>
   </nav>
   <button class="fab" id="fab" onclick="fabAct()">+</button>
@@ -428,12 +452,25 @@ const TODO_COLORS=[
   {id:'teal',bg:'#D5F0EE',txt:'#1A6B65'},
   {id:'green',bg:'#D5F5E3',txt:'#1E8449'},
 ];
+const GLIST_COLORS=[
+  {id:'red',bg:'#FADADD',txt:'#A93226'},
+  {id:'orange',bg:'#FDEBD0',txt:'#A04000'},
+  {id:'yellow',bg:'#FEF9E7',txt:'#9A7D0A'},
+  {id:'green',bg:'#D5F5E3',txt:'#1E8449'},
+  {id:'teal',bg:'#D5F0EE',txt:'#1A6B65'},
+  {id:'blue',bg:'#D5E8F5',txt:'#1A5276'},
+  {id:'purple',bg:'#E8D5F5',txt:'#5B2C8B'},
+  {id:'pink',bg:'#F5D0DC',txt:'#8B2252'},
+];
+const GLIST_EMOJIS=['🛒','🏪','🏬','🥦','🥩','🍞','💊','🐾','🏠','🌿','🍷','🎂'];
+let newGColor='red',newGEmoji='🛒';
 let recipes={},calD={},ideas={},groceryLists={};
 let starterD={lastFed:null,location:'counter',tempNote:'',bakeDay:null};
 let bakeLog={},shopItems=[],shopStaples=[];
 let curView='dashboard',wkOff=0,rFilt='all',rTab='recipes',shopTab='list',todoTab=null,calDayDetail=null;
 let calMonth=new Date().getMonth(),calYear=new Date().getFullYear();
-let todos={},newTodoColor='pink';
+let todos={},newTodoColor='pink',selectedStoreId=null;
+let activeListId=null,lNewColor='pink',lNewItemColor='pink';
 let pendingPhoto=null,rFormCat=null,rFormServ=4,editingRid=null,addShopRid=null;
 
 // ============================================================
@@ -495,7 +532,7 @@ function nav(v){
   document.querySelectorAll('.nbtn').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
   document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.id==='view-'+v));
   const fab=document.getElementById('fab');
-  fab.style.display=(v==='recipes'||v==='grocery'||v==='todos')?'flex':'none';
+  fab.style.display=(v==='recipes'||v==='grocery'||v==='todos'||v==='list')?'flex':'none';
   render();
 }
 function render(){
@@ -504,14 +541,15 @@ function render(){
   else if(curView==='calendar')renderCalendar();
   else if(curView==='grocery')renderGrocery();
   else if(curView==='todos')renderTodos();
+  else if(curView==='list')renderList();
 }
 function fabAct(){
   if(curView==='recipes'){
     if(rTab==='recipes')openRecipeForm(null);
     else openIdeaForm(null);
-  } else if(curView==='grocery')openNewGListModal(); else if(curView==='todos'){
-    openNewTodoModal();
-  }
+  } else if(curView==='grocery')openNewGListModal();
+  else if(curView==='todos')openNewTodoModal();
+  else if(curView==='list'){if(activeListId)openNewListItemForm();else openNewListForm();}
 }
 
 // ============================================================
@@ -567,7 +605,7 @@ function renderDash(){
   const activeItems=Object.values(groceryLists).reduce((s,l)=>s+(l.items||[]).filter(i=>!i.checked).length,0);
   const totalItems=Object.values(groceryLists).reduce((s,l)=>s+(l.items||[]).length,0);
   const gListCount=Object.keys(groceryLists).length;
-  const shopSub=gListCount>0?`${activeItems} item${activeItems!==1?'s':''} remaining across ${gListCount} list${gListCount!==1?'s':''}`:'Tap to create a list';
+  const shopSub=gListCount>0?`${activeItems} item${activeItems!==1?'s':''} across ${gListCount} store${gListCount!==1?'s':''}`:'Tap + to add your first store';
   const todoActive=Object.values(todos).reduce((sum,t)=>sum+(t.items||[]).filter(i=>!i.checked).length,0);
 
   // Detect tonight's dinner for the dashboard card
@@ -617,7 +655,7 @@ function renderDash(){
       </div>
     </div>`:''}
 
-    <div class="shop-card" onclick="openShoppingCard()">
+    <div class="shop-card" onclick="nav('grocery')">
       <div class="shop-card-left">
         <div class="shop-card-icon">🛍️</div>
         <div>
@@ -1298,91 +1336,177 @@ function addCustomMeal(ds,slot){
 
 function assignSlot(ds,slot,rid){db.ref('/calendar/'+ds+'/'+slot).set(rid);closeModal();}
 
-// ============================================================
-// GROCERY - Named color-coded lists
-// ============================================================
-const GLIST_EMOJIS=["🛒","🏠","🚗","🎉","🍰","🥦","🧴","💊","🌿","🐾","✈️","🏕️","🎁","🍷"];
-const GLIST_COLORS=[
-  {id:"pink",bg:"#F5D0DC",txt:"#8B2252"},{id:"rose",bg:"#FAE8EF",txt:"#C85480"},
-  {id:"purple",bg:"#E8D5F5",txt:"#5B2C8B"},{id:"blue",bg:"#D5E8F5",txt:"#1A5276"},
-  {id:"teal",bg:"#D5F0EE",txt:"#1A6B65"},{id:"green",bg:"#D5F5E3",txt:"#1E8449"},
-  {id:"yellow",bg:"#FDFBE8",txt:"#7D6608"},{id:"orange",bg:"#F5E8D5",txt:"#8B4513"},
-];
-let newGColor="pink",newGEmoji="🛒",activeGListId=null,activeTodoId=null;
 
+// ============================================================
+// GROCERY — Inline color-coded store sections
+// ============================================================
 function renderGrocery(){
   const el=document.getElementById("g-body");if(!el)return;
   const lists=Object.entries(groceryLists).sort((a,b)=>{
-    const ap=(a[1].pinned?2:0)+(a[1].shopping?1:0);
-    const bp=(b[1].pinned?2:0)+(b[1].shopping?1:0);
+    const ap=(a[1].pinned?1:0),bp=(b[1].pinned?1:0);
     return bp-ap||(b[1].updatedAt||"").localeCompare(a[1].updatedAt||"");
   });
-  const activeShop=lists.find(([,l])=>l.shopping);
-  el.innerHTML=(activeShop
-    ?`<div style="background:var(--ok);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between"><div><div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:600">🛒 Shopping: ${esc(activeShop[1].name)}</div><div style="font-size:12px;opacity:.85">${(activeShop[1].items||[]).filter(i=>!i.checked).length} items left</div></div><button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="openGList('${activeShop[0]}')">Open →</button></div>`
-    :"")
-    +`<div style="padding:12px 16px 4px;display:flex;align-items:center;justify-content:space-between"><div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--pri)">My Lists</div><span style="font-size:13px;color:var(--mut)">${lists.length} list${lists.length!==1?"s":""}</span></div>`
-    +(!lists.length
-      ?`<div class="empty"><div class="ei">🛒</div><p>No lists yet.<br>Tap + to create your first!<br><br><span style="font-size:13px">🏠 Pantry &nbsp;🚗 Costco &nbsp;🎉 Party</span></p></div>`
-      :`<div style="padding:8px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">${lists.map(([id,l])=>glistTileHtml(id,l)).join("")}</div>`
-    )
-    +`<div style="height:16px"></div>`;
+  if(!lists.length){
+    el.innerHTML=`
+      <div class="empty" style="padding-top:60px">
+        <div class="ei">🛒</div>
+        <p style="font-size:16px;font-weight:700;color:var(--pri);margin-bottom:8px">No stores yet</p>
+        <p style="font-size:14px;line-height:1.6">Tap <strong style="background:var(--acc);color:#fff;padding:1px 8px;border-radius:6px">+</strong> to add your first store<br><span style="color:var(--mut)">(e.g. Target, Sprouts, Costco...)</span></p>
+      </div>`;
+    return;
+  }
+  el.innerHTML=lists.map(([id,l])=>groceryStoreSection(id,l)).join("")+"<div style='height:80px'></div>";
 }
-function glistTileHtml(id,l){
-  const c=GLIST_COLORS.find(c=>c.id===l.color)||GLIST_COLORS[0];
-  const unc=(l.items||[]).filter(i=>!i.checked).length,tot=(l.items||[]).length;
-  return `<div style="border-radius:16px;padding:14px;cursor:pointer;box-shadow:0 2px 10px rgba(140,34,82,.1);min-height:96px;display:flex;flex-direction:column;justify-content:space-between;background:${c.bg};${l.shopping?"outline:2px solid var(--ok);":""}" onclick="openGList('${id}')">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px"><span style="font-size:26px">${l.emoji||"🛒"}</span><div>${l.pinned?"<span>📌</span>":""}${l.shopping?"<span>🛒</span>":""}</div></div>
-    <div><div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:600;line-height:1.3;margin-bottom:3px;color:${c.txt}">${esc(l.name)}</div><div style="font-size:11px;opacity:.7;color:${c.txt}">${unc}/${tot} item${tot!==1?"s":""}</div></div>
+
+function groceryStoreSection(id,l){
+  const c=GLIST_COLORS.find(x=>x.id===l.color)||GLIST_COLORS[3];
+  const items=l.items||[];
+  const unc=items.filter(i=>!i.checked);
+  const chk=items.filter(i=>i.checked);
+  const itemRows=items.map((item,idx)=>inlineItemHtml(item,idx,id,c)).join("");
+  const doneBar=chk.length?`
+    <div class="store-clear-row" style="background:${c.bg}">
+      <span style="font-size:12px;font-weight:700;color:${c.txt};opacity:.7">&#10003; ${chk.length} done</span>
+      <button onclick="clearGChecked('${id}')" style="font-size:12px;font-weight:700;border:none;background:none;cursor:pointer;color:${c.txt};text-decoration:underline;opacity:.8">Clear done</button>
+    </div>`:"";
+  return `<div class="store-section">
+    <div class="store-header" style="background:${c.txt}">
+      <div class="store-title">${l.emoji||"🛒"} ${esc(l.name)}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="store-count">${unc.length} item${unc.length!==1?"s":""}</span>
+        <button onclick="closeModal();setTimeout(()=>openEditGListModal('${id}'),200)" style="padding:6px 12px;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.5);border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">✏️ Edit</button>
+        <button class="store-menu-btn" onclick="openStoreMenu('${id}')" style="font-size:13px;letter-spacing:1px;font-weight:700">•••</button>
+      </div>
+    </div>
+    ${itemRows}
+    <div class="store-add-row" style="background:${c.bg}">
+      <input type="text" class="store-add-input" id="qadd-${id}"
+        placeholder="Add item to ${esc(l.name)}..."
+        onkeydown="if(event.key==='Enter')doInlineAdd('${id}')">
+      <button onclick="doInlineAdd('${id}')"
+        style="padding:11px 18px;background:${c.txt};color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0">Add</button>
+    </div>
+    ${doneBar}
   </div>`;
 }
-function openGList(id){
-  // If a sub-modal was open, close it
-  if(document.getElementById('m-ov').classList.contains('open'))closeModal();
-  activeGListId=id;const l=groceryLists[id];if(!l)return;
-  const c=GLIST_COLORS.find(c=>c.id===l.color)||GLIST_COLORS[0];
-  const items=l.items||[],unc=items.filter(i=>!i.checked),chk=items.filter(i=>i.checked);
-  // Set header style based on list color
-  document.getElementById("list-ohdr").style.background=c.txt;
-  document.getElementById("list-title").innerHTML=(l.emoji||"🛒")+" "+esc(l.name);
-  document.getElementById("list-inner").innerHTML=
-    `<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-      <button class="btn btn-p btn-sm" onclick="openAddGItemModal()">+ Add Item</button>
-      <button class="btn btn-s btn-sm" onclick="openAddFromListModal('${id}')">📋 From list</button>
-      <button class="btn btn-s btn-sm" onclick="openAddFromRecipeToGList('${id}')">🍽️ From recipe</button>
-      ${l.shopping?`<button class="btn btn-ok btn-sm" onclick="finishShopping('${id}')">✅ Done Shopping</button>`:`<button class="btn btn-sm" style="background:${c.bg};color:${c.txt};border:1.5px solid ${c.txt}" onclick="startShopping('${id}')">🛒 Start Shopping</button>`}
+
+function inlineItemHtml(item,idx,id,c){
+  const done=item.checked;
+  return `<div class="store-item-row ${done?"done-row":""}">
+    <button class="store-check-btn" onclick="togGItem('${id}',${idx})"
+      style="border-color:${done?c.txt:"var(--bor)"};background:${done?c.txt:"none"}">
+      ${done?"&#10003;":""}
+    </button>
+    <div style="flex:1;min-width:0">
+      <span class="store-item-text ${done?"done":""}">${esc(item.name)}</span>
+      ${item.source?`<div style="font-size:11px;color:var(--mut);margin-top:1px">from ${esc(item.source)}</div>`:""}
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-      <button class="btn btn-sm" style="background:var(--bg);color:var(--mut);border:1px solid var(--bor)" onclick="openEditGListModal('${id}')">✏️ Edit List</button>
-      <button class="btn btn-sm" style="background:var(--bg);color:var(--mut);border:1px solid var(--bor)" onclick="toggleGPin('${id}')">${l.pinned?"📌 Unpin":"📍 Pin"}</button>
-      ${chk.length?`<button class="btn btn-sm" style="background:var(--bg);color:var(--mut);border:1px solid var(--bor)" onclick="clearGChecked('${id}')">Clear done (${chk.length})</button>`:""}
-    </div>`
-    +(!items.length?`<div style="text-align:center;color:var(--mut);padding:24px 0;font-size:14px">No items yet — tap + to add!</div>`
-      :`<div>${unc.map(item=>gItemHtml(item,items.indexOf(item),id,l.shopping)).join("")}${chk.length?`<div style="padding:10px 0 4px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase">Got it ✓ (${chk.length})</div>${chk.map(item=>gItemHtml(item,items.indexOf(item),id,l.shopping)).join("")}`:""}</div>`)
-    +`<div style="height:8px"></div>`;
-  showListView();
+    ${item.qty?`<span class="store-item-qty">${esc(item.qty)}</span>`:""}
+    <button class="store-del-btn" onclick="delGItem('${id}',${idx})">&#215;</button>
+  </div>`;
 }
-function gItemHtml(item,idx,id,shopping){
-  if(shopping)return `<div style="display:flex;align-items:center;gap:14px;padding:16px;border-bottom:1px solid var(--bor)"><button style="width:36px;height:36px;border-radius:50%;border:2px solid ${item.checked?"var(--ok)":"var(--bor)"};background:${item.checked?"var(--ok)":"none"};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0" onclick="togGItem('${id}',${idx})">${item.checked?"✓":""}</button><div style="flex:1;min-width:0"><div style="font-size:17px;font-weight:${item.checked?"400":"700"};color:${item.checked?"var(--mut)":"var(--txt)"};${item.checked?"text-decoration:line-through;":""}">${esc(item.name)}</div>${item.source?`<div style="font-size:11px;color:var(--mut);margin-top:2px">from ${esc(item.source)}</div>`:""}</div><span style="font-size:14px;color:var(--mut);flex-shrink:0">${esc(item.qty||"")}</span></div>`;
-  return `<div class="sitem"><button class="schk ${item.checked?"done":""}" onclick="togGItem('${id}',${idx})">${item.checked?"✓":""}</button><div style="flex:1;min-width:0"><div class="sname ${item.checked?"done":""}">${esc(item.name)}</div>${item.source?`<div class="ssrc">from ${esc(item.source)}</div>`:""}</div><span class="sqty">${esc(item.qty||"")}</span><button class="sdel" onclick="delGItem('${id}',${idx})">×</button></div>`;
+
+function doInlineAdd(id){
+  const el=document.getElementById("qadd-"+id);
+  const name=el?el.value.trim():"";
+  if(!name)return;
+  const l=groceryLists[id];if(!l)return;
+  db.ref("/grocery/lists/"+id+"/items").set([...(l.items||[]),{name,qty:"",checked:false}]);
+  db.ref("/grocery/lists/"+id+"/updatedAt").set(new Date().toISOString());
+  if(el){el.value="";setTimeout(()=>el.focus(),80);}
 }
-function togGItem(id,idx){const l=groceryLists[id];if(!l)return;db.ref("/grocery/lists/"+id+"/items").set((l.items||[]).map((item,i)=>i===idx?{...item,checked:!item.checked}:item));db.ref("/grocery/lists/"+id+"/updatedAt").set(new Date().toISOString());setTimeout(()=>openGList(id),150);}
-function delGItem(id,idx){const l=groceryLists[id];if(!l)return;db.ref("/grocery/lists/"+id+"/items").set((l.items||[]).filter((_,i)=>i!==idx));db.ref("/grocery/lists/"+id+"/updatedAt").set(new Date().toISOString());setTimeout(()=>openGList(id),150);}
-function clearGChecked(id){const l=groceryLists[id];if(!l)return;db.ref("/grocery/lists/"+id+"/items").set((l.items||[]).filter(i=>!i.checked));setTimeout(()=>openGList(id),200);}
-function startShopping(id){Object.keys(groceryLists).forEach(lid=>{if(groceryLists[lid].shopping&&lid!==id)db.ref("/grocery/lists/"+lid+"/shopping").remove();});db.ref("/grocery/lists/"+id+"/shopping").set(true);db.ref("/grocery/lists/"+id+"/updatedAt").set(new Date().toISOString());setTimeout(()=>openGList(id),200);}
-function finishShopping(id){if(!confirm("Done shopping? Checked items will be cleared."))return;const l=groceryLists[id];if(!l)return;db.ref("/grocery/lists/"+id+"/items").set((l.items||[]).filter(i=>!i.checked));db.ref("/grocery/lists/"+id+"/shopping").remove();setTimeout(()=>openGList(id),200);}
-function toggleGPin(id){db.ref("/grocery/lists/"+id+"/pinned").set(!groceryLists[id]?.pinned);setTimeout(()=>openGList(id),200);}
+
+function togGItem(id,idx){
+  const l=groceryLists[id];if(!l)return;
+  db.ref("/grocery/lists/"+id+"/items").set((l.items||[]).map((item,i)=>i===idx?{...item,checked:!item.checked}:item));
+  db.ref("/grocery/lists/"+id+"/updatedAt").set(new Date().toISOString());
+  setTimeout(()=>renderGrocery(),150);
+}
+function delGItem(id,idx){
+  const l=groceryLists[id];if(!l)return;
+  db.ref("/grocery/lists/"+id+"/items").set((l.items||[]).filter((_,i)=>i!==idx));
+  db.ref("/grocery/lists/"+id+"/updatedAt").set(new Date().toISOString());
+  setTimeout(()=>renderGrocery(),150);
+}
+function clearGChecked(id){
+  const l=groceryLists[id];if(!l)return;
+  db.ref("/grocery/lists/"+id+"/items").set((l.items||[]).filter(i=>!i.checked));
+  setTimeout(()=>renderGrocery(),200);
+}
+function toggleGPin(id){
+  db.ref("/grocery/lists/"+id+"/pinned").set(!groceryLists[id]?.pinned);
+  setTimeout(()=>renderGrocery(),200);
+}
+function deleteGList(id){
+  if(!confirm("Delete this store and all its items? Cannot be undone."))return;
+  db.ref("/grocery/lists/"+id).remove();
+  closeModal();
+}
+
+function openStoreMenu(id){
+  const l=groceryLists[id];if(!l)return;
+  const c=GLIST_COLORS.find(x=>x.id===l.color)||GLIST_COLORS[3];
+  document.getElementById("m-title").textContent=(l.emoji||"🛒")+" "+l.name;
+  document.getElementById("m-body").innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <button class="btn btn-s" onclick="openAddFromRecipeToGList('${id}')">🍽️ From Recipe</button>
+      <button class="btn btn-s" onclick="closeModal();openAddFromListModal('${id}')">📋 From List</button>
+      <button class="btn btn-s" onclick="closeModal();setTimeout(()=>openEditGListModal('${id}'),200)">✏️ Edit</button>
+      <button class="btn btn-s" onclick="toggleGPin('${id}')">${l.pinned?"📌 Unpin":"📍 Pin"}</button>
+    </div>
+    <button class="btn btn-d btn-full" onclick="deleteGList('${id}')">🗑️ Delete ${esc(l.name)}</button>
+    <div style="height:8px"></div>
+  `;
+  showModal();
+}
+
 function openNewGListModal(){
-  newGColor="pink";newGEmoji="🛒";
-  document.getElementById("m-title").textContent="✨ New List";
+  newGColor="red";newGEmoji="🛒";
+  document.getElementById("m-title").textContent="🛒 New Store";
   document.getElementById("m-body").innerHTML=
-    `<div class="fg"><label class="fl">List Name</label><input type="text" class="fi" id="gl-name" placeholder="e.g. Pantry, Costco, Birthday Party..."></div>
+    `<p style="font-size:13px;color:var(--mut);margin-bottom:14px">Name your store and pick a color.</p>
+    <div class="fg"><label class="fl">Store Name</label><input type="text" class="fi" id="gl-name" placeholder="e.g. Target, Sprouts, Costco, Trader Joe's..."></div>
     <div class="fg"><label class="fl">Icon</label><div style="display:flex;flex-wrap:wrap;gap:8px">${GLIST_EMOJIS.map(e=>`<span style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid ${e==="🛒"?"var(--acc)":"transparent"};background:${e==="🛒"?"var(--acc-lt)":"none"}" onclick="pickGEmoji(event,'${e}')">${e}</span>`).join("")}</div></div>
-    <div class="fg"><label class="fl">Color</label><div style="display:flex;gap:10px;flex-wrap:wrap">${GLIST_COLORS.map(c=>`<div style="width:32px;height:32px;border-radius:50%;cursor:pointer;background:${c.bg};border:${c.id==="pink"?"3px":"2px"} solid ${c.txt};transition:transform .15s" onclick="pickGColor(event,'${c.id}')"></div>`).join("")}</div></div>
-    <div style="display:flex;gap:8px"><button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button><button class="btn btn-p" onclick="doNewGList()" style="flex:1">Create & Open</button></div>`;
+    <div class="fg">
+      <label class="fl">Color</label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap" id="color-pick-row">
+        ${GLIST_COLORS.map(c=>`<div onclick="pickGColor(event,'${c.id}')" data-cid="${c.id}"
+          style="width:36px;height:36px;border-radius:50%;cursor:pointer;background:${c.txt};border:${c.id===newGColor?"4px solid #333":"2px solid #fff"};box-shadow:0 2px 8px rgba(0,0,0,.2);transition:all .15s"></div>`).join("")}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px"><button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button><button class="btn btn-p" onclick="doNewGList()" style="flex:1">Create Store</button></div>`;
   showModal();
   setTimeout(()=>document.getElementById("gl-name")?.focus(),300);
 }
+
+function openEditGListModal(id){
+  const l=groceryLists[id];if(!l)return;
+  newGColor=l.color||"red";newGEmoji=l.emoji||"🛒";
+  document.getElementById("m-title").textContent="&#9998; Edit Store";
+  document.getElementById("m-body").innerHTML=
+    `<div class="fg"><label class="fl">Store Name</label><input type="text" class="fi" id="el-name" value="${esc(l.name)}"></div>
+    <div class="fg"><label class="fl">Icon</label><div style="display:flex;flex-wrap:wrap;gap:8px">${GLIST_EMOJIS.map(e=>`<span style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid ${e===newGEmoji?"var(--acc)":"transparent"};background:${e===newGEmoji?"var(--acc-lt)":"none"}" onclick="pickGEmoji(event,'${e}')">${e}</span>`).join("")}</div></div>
+    <div class="fg">
+      <label class="fl">Color</label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap" id="color-pick-row">
+        ${GLIST_COLORS.map(c=>`<div onclick="pickGColor(event,'${c.id}')" data-cid="${c.id}"
+          style="width:36px;height:36px;border-radius:50%;cursor:pointer;background:${c.txt};border:${c.id===newGColor?"4px solid #333":"2px solid #fff"};box-shadow:0 2px 8px rgba(0,0,0,.2);transition:all .15s"></div>`).join("")}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-d btn-sm" onclick="deleteGList('${id}')">🗑️ Delete</button>
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" onclick="doEditGList('${id}')" style="flex:1">Save</button>
+    </div>`;
+  showModal();
+}
+function doEditGList(id){
+  const name=document.getElementById("el-name").value.trim();
+  if(!name){alert("Enter a name.");return;}
+  db.ref("/grocery/lists/"+id).update({name,color:newGColor,emoji:newGEmoji,updatedAt:new Date().toISOString()});
+  closeModal();
+}
+
 function pickGEmoji(e,emoji){
   newGEmoji=emoji;
   e.currentTarget.parentElement.querySelectorAll("span").forEach(s=>{s.style.border="2px solid transparent";s.style.background="none";});
@@ -1390,68 +1514,86 @@ function pickGEmoji(e,emoji){
 }
 function pickGColor(e,colorId){
   newGColor=colorId;
-  const col=GLIST_COLORS.find(x=>x.id===colorId);if(!col)return;
-  e.currentTarget.parentElement.querySelectorAll("div").forEach(d=>{d.style.transform="scale(1)";const dc=GLIST_COLORS.find(x=>x.bg===d.style.background);if(dc)d.style.border=`2px solid ${dc.txt}`;});
-  e.currentTarget.style.border=`3px solid ${col.txt}`;e.currentTarget.style.transform="scale(1.2)";
+  document.querySelectorAll("#color-pick-row div").forEach(d=>{d.style.border="2px solid #fff";d.style.transform="scale(1)";});
+  e.currentTarget.style.border="4px solid #333";e.currentTarget.style.transform="scale(1.15)";
 }
 function doNewGList(){
-  const name=document.getElementById("gl-name").value.trim();if(!name){alert("Enter a list name.");return;}
+  const name=document.getElementById("gl-name").value.trim();
+  if(!name){alert("Enter a store name.");return;}
   const id="gl_"+Date.now();
-  db.ref("/grocery/lists/"+id).set({name,color:newGColor,emoji:newGEmoji,items:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),pinned:false,shopping:false});
-  closeModal();setTimeout(()=>openGList(id),400);
+  db.ref("/grocery/lists/"+id).set({name,color:newGColor,emoji:newGEmoji,items:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),pinned:false});
+  closeModal();
 }
-function openEditGListModal(id){
-  const l=groceryLists[id];if(!l)return;
-  newGColor=l.color||"pink";newGEmoji=l.emoji||"🛒";
-  document.getElementById("m-title").textContent="✏️ Edit List";
-  document.getElementById("m-body").innerHTML=
-    `<div class="fg"><label class="fl">List Name</label><input type="text" class="fi" id="el-name" value="${esc(l.name)}"></div>
-    <div class="fg"><label class="fl">Icon</label><div style="display:flex;flex-wrap:wrap;gap:8px">${GLIST_EMOJIS.map(e=>`<span style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid ${e===newGEmoji?"var(--acc)":"transparent"};background:${e===newGEmoji?"var(--acc-lt)":"none"}" onclick="pickGEmoji(event,'${e}')">${e}</span>`).join("")}</div></div>
-    <div class="fg"><label class="fl">Color</label><div style="display:flex;gap:10px;flex-wrap:wrap">${GLIST_COLORS.map(c=>`<div style="width:32px;height:32px;border-radius:50%;cursor:pointer;background:${c.bg};border:${c.id===newGColor?"3px":"2px"} solid ${c.txt};transition:transform .15s" onclick="pickGColor(event,'${c.id}')"></div>`).join("")}</div></div>
-    <div style="display:flex;gap:8px;margin-top:4px">
-      <button class="btn btn-d btn-sm" onclick="deleteGList('${id}')">🗑️ Delete</button>
-      <button class="btn btn-s" onclick="openGList('${id}')" style="flex:1">Cancel</button>
-      <button class="btn btn-p" onclick="doEditGList('${id}')" style="flex:1">Save</button>
-    </div>`;
-}
-function doEditGList(id){const name=document.getElementById("el-name").value.trim();if(!name){alert("Enter a name.");return;}db.ref("/grocery/lists/"+id).update({name,color:newGColor,emoji:newGEmoji,updatedAt:new Date().toISOString()});closeModal();}
-function deleteGList(id){if(!confirm("Delete this list? Cannot be undone."))return;db.ref("/grocery/lists/"+id).remove();closeModal();}
-function openAddGItemModal(){
-  document.getElementById("m-title").textContent="+ Add Item";
-  document.getElementById("m-body").innerHTML=
-    `<div class="fg"><label class="fl">Item Name</label><input type="text" class="fi" id="gi-name" placeholder="e.g. Bread flour" onkeydown="if(event.key==='Enter')doAddGItem()"></div>
-    <div class="fg"><label class="fl">Quantity (optional)</label><input type="text" class="fi" id="gi-qty" placeholder="e.g. 5 lbs"></div>
-    <div style="display:flex;gap:8px"><button class="btn btn-s" onclick="openGList('${activeGListId}')" style="flex:1">← Back</button><button class="btn btn-p" onclick="doAddGItem()" style="flex:1">Add</button></div>`;
+
+// Add to Shopping — store picker version
+function openAddToShop(id){
+  addShopRid=id;
+  const r=recipes[id];if(!r)return;
+  const base=r.servings||4;
+  document.getElementById('m-title').textContent='🛒 Add to Shopping List';
+  const storeOptions=Object.keys(groceryLists).length
+    ?Object.entries(groceryLists).map(([lid,l])=>{
+        const c=GLIST_COLORS.find(x=>x.id===l.color)||GLIST_COLORS[3];
+        return `<button onclick="doAddToShopList('${lid}')"
+          style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:2.5px solid ${c.txt};background:${c.bg};margin-bottom:8px;cursor:pointer;font-weight:700;font-size:15px;color:${c.txt}">
+          <span style="font-size:20px">${l.emoji||'🛒'}</span>${esc(l.name)}
+        </button>`;
+      }).join("")
+    :`<div style="text-align:center;padding:16px 0;color:var(--mut);font-size:14px">
+        No stores yet — <button onclick="closeModal();nav('grocery');setTimeout(openNewGListModal,300)" style="border:none;background:none;color:var(--acc);font-weight:700;font-size:14px;cursor:pointer">create one first</button>
+      </div>`;
+  document.getElementById('m-body').innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span style="font-weight:700;color:var(--txt)">Servings:</span>
+      <div class="sv-ctr">
+        <button class="sv-btn" onclick="adjAddServ(-1)">&#8722;</button>
+        <span class="sv-num" id="add-sv" data-base="${base}">${base}</span>
+        <button class="sv-btn" onclick="adjAddServ(1)">+</button>
+      </div>
+    </div>
+    <div id="add-ing-prev" style="margin-bottom:16px">
+      ${(r.ingredients||[]).map(i=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bor);font-size:14px"><span>${esc(i.name)}</span><span style="color:var(--mut)">${esc(i.qty||'')}</span></div>`).join('')}
+    </div>
+    <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--mut);margin-bottom:10px">Add to store:</p>
+    ${storeOptions}
+    <button class="btn btn-s btn-full" onclick="closeModal()">Cancel</button>
+    <div style="height:8px"></div>
+  `;
   showModal();
-  setTimeout(()=>document.getElementById("gi-name")?.focus(),300);
 }
-function doAddGItem(){
-  const name=document.getElementById("gi-name").value.trim();if(!name){alert("Enter item name.");return;}
-  const qty=document.getElementById("gi-qty").value.trim();
-  const l=groceryLists[activeGListId];if(!l)return;
-  db.ref("/grocery/lists/"+activeGListId+"/items").set([...(l.items||[]),{name,qty,checked:false,source:""}]);
-  db.ref("/grocery/lists/"+activeGListId+"/updatedAt").set(new Date().toISOString());
-  setTimeout(()=>openGList(activeGListId),200);
+function doAddToShopList(lid){
+  const r=recipes[addShopRid];if(!r)return;
+  const el=document.getElementById('add-sv');
+  const cur=el?parseInt(el.textContent)||r.servings||4:r.servings||4;
+  const factor=cur/(r.servings||4);
+  const ni=(r.ingredients||[]).filter(i=>i.name).map(i=>({name:i.name,qty:scaleQ(i.qty,factor),checked:false,source:r.name}));
+  const l=groceryLists[lid];
+  db.ref('/grocery/lists/'+lid+'/items').set([...(l?.items||[]),...ni]);
+  db.ref('/grocery/lists/'+lid+'/updatedAt').set(new Date().toISOString());
+  closeModal();nav('grocery');
 }
+
 function openAddFromListModal(id){
   const others=Object.entries(groceryLists).filter(([lid])=>lid!==id);
-  document.getElementById("m-title").textContent="📋 From another list";
+  document.getElementById("m-title").textContent="Copy from another store";
   document.getElementById("m-body").innerHTML=
     `<p style="font-size:13px;color:var(--mut);margin-bottom:14px">Copy unchecked items from:</p>`
-    +(!others.length?`<div style="text-align:center;color:var(--mut);padding:20px 0">No other lists yet.</div>`
-      :others.map(([lid,l])=>{const c=GLIST_COLORS.find(c=>c.id===l.color)||GLIST_COLORS[0];const unc=(l.items||[]).filter(i=>!i.checked).length;
-        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--bor);background:${c.bg};cursor:pointer;margin-bottom:8px" onclick="doCopyFromList('${id}','${lid}')"><span style="font-size:24px">${l.emoji||"🛒"}</span><div style="flex:1"><div style="font-weight:700;font-size:15px;color:${c.txt}">${esc(l.name)}</div><div style="font-size:12px;color:${c.txt};opacity:.75">${unc} unchecked</div></div></div>`;
+    +(!others.length?`<div style="text-align:center;color:var(--mut);padding:20px 0">No other stores yet.</div>`
+      :others.map(([lid,l])=>{const c=GLIST_COLORS.find(c=>c.id===l.color)||GLIST_COLORS[3];const unc=(l.items||[]).filter(i=>!i.checked).length;
+        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:1.5px solid ${c.txt};background:${c.bg};cursor:pointer;margin-bottom:8px" onclick="doCopyFromList('${id}','${lid}')"><span style="font-size:24px">${l.emoji||"🛒"}</span><div style="flex:1"><div style="font-weight:700;font-size:15px;color:${c.txt}">${esc(l.name)}</div><div style="font-size:12px;color:${c.txt};opacity:.75">${unc} unchecked items</div></div></div>`;
       }).join("")
     )
-    +`<button class="btn btn-s btn-full" onclick="openGList('${id}')" style="margin-top:8px">← Back</button>`;
+    +`<button class="btn btn-s btn-full" onclick="closeModal()" style="margin-top:8px">Cancel</button>`;
+  showModal();
 }
 function doCopyFromList(tId,sId){
   const src=groceryLists[sId],tgt=groceryLists[tId];if(!src||!tgt)return;
   const toAdd=(src.items||[]).filter(i=>!i.checked).map(i=>({...i,checked:false,source:src.name}));
   db.ref("/grocery/lists/"+tId+"/items").set([...(tgt.items||[]),...toAdd]);
   db.ref("/grocery/lists/"+tId+"/updatedAt").set(new Date().toISOString());
-  setTimeout(()=>openGList(tId),200);
+  closeModal();setTimeout(()=>renderGrocery(),300);
 }
+
 function openAddFromRecipeToGList(id){
   activeGListId=id;
   document.getElementById("m-title").textContent="🍽️ Add from Recipe";
@@ -1464,15 +1606,17 @@ function openAddFromRecipeToGList(id){
         <div><div style="font-weight:700;font-size:15px">${esc(r.name)}</div>${c?`<span class="pill ${c.cls}">${c.emoji} ${c.label}</span>`:""}</div>
       </div>`;}).join("")
     )
-    +`<button class="btn btn-s btn-full" onclick="openGList('${id}')" style="margin-top:8px">← Back</button>`;
+    +`<button class="btn btn-s btn-full" onclick="closeModal()" style="margin-top:8px">Cancel</button>`;
+  showModal();
 }
 function pickRecipeForGList(listId,rid){
   const r=recipes[rid],l=groceryLists[listId];if(!r||!l)return;const base=r.servings||4;
   document.getElementById("m-title").textContent="🍽️ "+esc(r.name);
   document.getElementById("m-body").innerHTML=
-    `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="font-weight:700">Servings:</span><div class="sv-ctr"><button class="sv-btn" onclick="adjRGS(-1,'${rid}','${listId}',${base})">−</button><span class="sv-num" id="rgs-sv" data-base="${base}">${base}</span><button class="sv-btn" onclick="adjRGS(1,'${rid}','${listId}',${base})">+</button></div></div>
+    `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="font-weight:700">Servings:</span><div class="sv-ctr"><button class="sv-btn" onclick="adjRGS(-1,'${rid}','${listId}',${base})">&#8722;</button><span class="sv-num" id="rgs-sv" data-base="${base}">${base}</span><button class="sv-btn" onclick="adjRGS(1,'${rid}','${listId}',${base})">+</button></div></div>
     <div id="rgs-ings">${(r.ingredients||[]).map(i=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bor);font-size:14px"><span>${esc(i.name)}</span><span style="color:var(--mut)">${esc(i.qty||"")}</span></div>`).join("")}</div>
-    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-s" onclick="openAddFromRecipeToGList('${listId}')" style="flex:1">← Back</button><button class="btn btn-p" onclick="doAddRecipeToGList('${listId}','${rid}')" style="flex:1">Add All</button></div>`;
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-s" onclick="openAddFromRecipeToGList('${listId}')" style="flex:1">&#8592; Back</button><button class="btn btn-p" onclick="doAddRecipeToGList('${listId}','${rid}')" style="flex:1">Add All</button></div>`;
+  showModal();
 }
 function adjRGS(delta,rid,listId,base){
   const el=document.getElementById("rgs-sv");if(!el)return;
@@ -1487,127 +1631,168 @@ function doAddRecipeToGList(listId,rid){
   const ni=(r.ingredients||[]).filter(i=>i.name).map(i=>({name:i.name,qty:scaleQ(i.qty,factor),checked:false,source:r.name}));
   db.ref("/grocery/lists/"+listId+"/items").set([...(l.items||[]),...ni]);
   db.ref("/grocery/lists/"+listId+"/updatedAt").set(new Date().toISOString());
-  setTimeout(()=>openGList(listId),200);
+  closeModal();setTimeout(()=>renderGrocery(),300);
 }
+
+// ============================================================
+// GROCERY TAB (view-todos) — localStorage-backed store/item lists
+// ============================================================
+function loadGStores(){try{return JSON.parse(localStorage.getItem('kob_gstores')||'[]');}catch{return[];}}
+function saveGStores(s){localStorage.setItem('kob_gstores',JSON.stringify(s));}
 
 function renderTodos(){
   const el=document.getElementById('t-body');if(!el)return;
-  const allItems=[];
-  Object.entries(todos).sort((a,b)=>(b[1].createdAt||'').localeCompare(a[1].createdAt||'')).forEach(([tid,t])=>{
-    (t.items||[]).forEach((item,idx)=>{
-      allItems.push({tid,idx,text:item.text||item.name||'',checked:!!item.checked,listName:t.name,listColor:t.color||'pink'});
-    });
-  });
-  const unc=allItems.filter(i=>!i.checked);
-  const chk=allItems.filter(i=>i.checked);
-  const multiList=Object.keys(todos).length>1;
-  el.innerHTML=`
-    <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--sur);border-bottom:2px solid var(--bor);position:sticky;top:0;z-index:2">
-      <input type="text" id="combined-add-in" placeholder="Add an item..."
-        style="flex:1;padding:13px 14px;border:2px solid var(--bor);border-radius:12px;font-size:17px;background:var(--bg);color:var(--txt)"
-        onkeydown="if(event.key==='Enter')doAddCombinedItem()">
-      <button onclick="doAddCombinedItem()"
-        style="padding:13px 18px;background:var(--acc);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;flex-shrink:0">Add</button>
-    </div>
-    ${!allItems.length
-      ?`<div class="empty"><div class="ei">✅</div><p>Nothing here yet.<br>Add your first item above!</p></div>`
-      :`<div>
-          ${unc.map(item=>combinedItemHtml(item,multiList)).join('')}
-          ${chk.length?`
-            <div style="padding:10px 16px 4px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.6px">Done (${chk.length})</div>
-            ${chk.map(item=>combinedItemHtml(item,multiList)).join('')}
-            <div style="padding:12px 16px">
-              <button onclick="clearCombinedDone()" style="width:100%;padding:11px;background:var(--bg);color:var(--mut);border:1.5px solid var(--bor);border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Clear all done (${chk.length})</button>
-            </div>
-          `:''}
-        </div>`
-    }
-    <div style="height:16px"></div>
-  `;
+  const stores=loadGStores();
+  if(!stores.length){
+    el.innerHTML=`
+      <div class="empty" style="padding-top:60px">
+        <div class="ei">🛒</div>
+        <p style="font-size:16px;font-weight:700;color:var(--pri);margin-bottom:8px">No stores yet</p>
+        <p style="font-size:14px;line-height:1.6">Tap <strong style="background:var(--acc);color:#fff;padding:1px 8px;border-radius:6px">+</strong> to add your first store</p>
+      </div>`;
+    return;
+  }
+  el.innerHTML=stores.map(store=>gStoreSectionHtml(store)).join('')+'<div style="height:100px"></div>';
 }
 
-function combinedItemHtml(item,showList){
-  const c=TODO_COLORS.find(col=>col.id===item.listColor)||TODO_COLORS[0];
-  return `<div style="display:flex;align-items:center;min-height:60px;padding:14px 16px;border-bottom:1px solid var(--bor);gap:14px;background:${item.checked?'var(--bg)':'var(--sur)'}">
-    <button onclick="togCombinedItem('${item.tid}',${item.idx})"
-      style="width:30px;height:30px;border-radius:50%;border:2.5px solid ${item.checked?'var(--ok)':'var(--bor)'};background:${item.checked?'var(--ok)':'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0;transition:all .15s">
+function gStoreSectionHtml(store){
+  const c=TODO_COLORS.find(x=>x.id===store.color)||TODO_COLORS[0];
+  const items=store.items||[];
+  const itemsHtml=items.map((item,idx)=>gItemHtml(store.id,item,idx,c)).join('');
+  return `
+    <div style="margin:0 0 28px">
+      <div style="display:flex;align-items:center;gap:0;border-left:5px solid ${c.txt};margin:0 16px;padding:10px 12px 10px 14px;background:var(--sur);border-radius:0 12px 0 0;box-shadow:0 2px 6px rgba(0,0,0,.06)">
+        <div style="flex:1;min-width:0">
+          <div id="store-name-display-${store.id}" style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--pri);cursor:pointer;line-height:1.2" onclick="startEditStoreName('${store.id}')">${esc(store.name)}</div>
+          <div id="store-name-edit-${store.id}" style="display:none">
+            <input type="text" value="${esc(store.name)}" id="store-name-in-${store.id}"
+              style="width:100%;padding:6px 10px;border:1.5px solid var(--acc);border-radius:8px;font-size:16px;font-weight:700;font-family:'Playfair Display',serif;color:var(--pri);background:var(--bg)"
+              onblur="saveStoreName('${store.id}')" onkeydown="if(event.key==='Enter')saveStoreName('${store.id}');if(event.key==='Escape')cancelEditStoreName('${store.id}')">
+          </div>
+        </div>
+        <button onclick="deleteGStore('${store.id}')" title="Delete store"
+          style="width:32px;height:32px;border-radius:50%;border:none;background:none;font-size:18px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.6">🗑️</button>
+      </div>
+      <div style="margin:0 16px;background:var(--sur);border-left:5px solid ${c.txt};border-radius:0 0 12px 0">
+        ${itemsHtml}
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--bor)">
+          <input type="text" id="qadd-g-${store.id}" placeholder="Add item..."
+            style="flex:1;padding:9px 12px;border:1.5px solid var(--bor);border-radius:8px;font-size:15px;background:var(--bg);color:var(--txt)"
+            onkeydown="if(event.key==='Enter')doAddGStoreItem('${store.id}')">
+          <button onclick="doAddGStoreItem('${store.id}')"
+            style="padding:9px 16px;background:${c.txt};color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0">+</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function gItemHtml(storeId,item,idx,c){
+  return `<div style="display:flex;align-items:center;gap:10px;padding:11px 14px 11px 20px;border-top:1px solid var(--bor);background:${item.checked?'var(--bg)':'var(--sur)'}">
+    <button onclick="togGStoreItem('${storeId}',${idx})"
+      style="width:22px;height:22px;border-radius:5px;border:2px solid ${item.checked?c.txt:'var(--bor)'};background:${item.checked?c.txt:'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;transition:all .15s">
       ${item.checked?'✓':''}
     </button>
-    <div style="flex:1;min-width:0">
-      <div style="font-size:18px;font-weight:${item.checked?'400':'600'};color:${item.checked?'var(--mut)':'var(--txt)'};${item.checked?'text-decoration:line-through;':''}line-height:1.3">${esc(item.text)}</div>
-      ${showList?`<div style="font-size:11px;color:${c.txt};background:${c.bg};padding:2px 8px;border-radius:10px;display:inline-block;margin-top:3px;font-weight:700">${esc(item.listName)}</div>`:''}
+    <div id="item-display-${storeId}-${idx}" style="flex:1;min-width:0;cursor:pointer" onclick="startEditItemName('${storeId}',${idx})">
+      <span style="font-size:15px;font-weight:${item.checked?'400':'600'};color:${item.checked?'var(--mut)':'var(--txt)'};${item.checked?'text-decoration:line-through;':''}line-height:1.3">${esc(item.name)}</span>
     </div>
-    <button onclick="delCombinedItem('${item.tid}',${item.idx})"
-      style="width:36px;height:36px;border-radius:50%;border:none;background:none;font-size:22px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.5">×</button>
+    <div id="item-edit-${storeId}-${idx}" style="display:none;flex:1;min-width:0">
+      <input type="text" value="${esc(item.name)}" id="item-in-${storeId}-${idx}"
+        style="width:100%;padding:5px 8px;border:1.5px solid var(--acc);border-radius:6px;font-size:15px;font-weight:600;color:var(--txt);background:var(--bg)"
+        onblur="saveItemName('${storeId}',${idx})" onkeydown="if(event.key==='Enter')saveItemName('${storeId}',${idx});if(event.key==='Escape')cancelEditItemName('${storeId}',${idx})">
+    </div>
+    <button onclick="delGStoreItem('${storeId}',${idx})"
+      style="width:28px;height:28px;border-radius:50%;border:none;background:none;font-size:16px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.5">🗑️</button>
   </div>`;
 }
 
-function doAddCombinedItem(){
-  const el=document.getElementById('combined-add-in');
-  const text=el?el.value.trim():'';
-  if(!text)return;
-  const sortedLists=Object.entries(todos).sort((a,b)=>(b[1].createdAt||'').localeCompare(a[1].createdAt||''));
-  if(!sortedLists.length){
-    const id='todo_'+Date.now();
-    const newList={name:'My List',color:'pink',items:[{text,checked:false}],createdAt:new Date().toISOString()};
-    todos[id]=newList;
-    db.ref('/todos/'+id).set(newList);
-  } else {
-    const [tid,t]=sortedLists[0];
-    const items=[...(t.items||[]),{text,checked:false}];
-    todos[tid]={...todos[tid],items};
-    db.ref('/todos/'+tid+'/items').set(items);
-  }
+function startEditStoreName(id){
+  document.getElementById('store-name-display-'+id).style.display='none';
+  const editEl=document.getElementById('store-name-edit-'+id);
+  editEl.style.display='block';
+  setTimeout(()=>document.getElementById('store-name-in-'+id)?.focus(),20);
+}
+function cancelEditStoreName(id){
+  document.getElementById('store-name-edit-'+id).style.display='none';
+  document.getElementById('store-name-display-'+id).style.display='';
+}
+function saveStoreName(id){
+  const val=document.getElementById('store-name-in-'+id)?.value.trim();
+  if(!val){cancelEditStoreName(id);return;}
+  const stores=loadGStores();
+  const s=stores.find(x=>x.id===id);if(!s)return;
+  s.name=val;saveGStores(stores);renderTodos();
+}
+
+function startEditItemName(storeId,idx){
+  document.getElementById(`item-display-${storeId}-${idx}`).style.display='none';
+  const editEl=document.getElementById(`item-edit-${storeId}-${idx}`);
+  editEl.style.display='flex';
+  setTimeout(()=>document.getElementById(`item-in-${storeId}-${idx}`)?.focus(),20);
+}
+function cancelEditItemName(storeId,idx){
+  document.getElementById(`item-edit-${storeId}-${idx}`).style.display='none';
+  document.getElementById(`item-display-${storeId}-${idx}`).style.display='';
+}
+function saveItemName(storeId,idx){
+  const val=document.getElementById(`item-in-${storeId}-${idx}`)?.value.trim();
+  if(!val){cancelEditItemName(storeId,idx);return;}
+  const stores=loadGStores();
+  const s=stores.find(x=>x.id===storeId);if(!s)return;
+  if(!s.items[idx])return;
+  s.items[idx].name=val;saveGStores(stores);renderTodos();
+}
+
+function doAddGStoreItem(storeId){
+  const el=document.getElementById('qadd-g-'+storeId);
+  const name=el?el.value.trim():'';if(!name)return;
+  const stores=loadGStores();
+  const s=stores.find(x=>x.id===storeId);if(!s)return;
+  if(!s.items)s.items=[];
+  s.items.push({name,checked:false});
+  saveGStores(stores);
   if(el)el.value='';
   renderTodos();
-  const inp=document.getElementById('combined-add-in');
-  if(inp)inp.focus();
+  setTimeout(()=>document.getElementById('qadd-g-'+storeId)?.focus(),80);
 }
 
-function togCombinedItem(tid,idx){
-  const t=todos[tid];if(!t)return;
-  const items=(t.items||[]).map((item,i)=>i===idx?{...item,checked:!item.checked}:item);
-  todos[tid]={...todos[tid],items};
-  db.ref('/todos/'+tid+'/items').set(items);
-  renderTodos();
+function togGStoreItem(storeId,idx){
+  const stores=loadGStores();
+  const s=stores.find(x=>x.id===storeId);if(!s||!s.items[idx])return;
+  s.items[idx].checked=!s.items[idx].checked;
+  saveGStores(stores);renderTodos();
 }
 
-function delCombinedItem(tid,idx){
-  const t=todos[tid];if(!t)return;
-  const items=(t.items||[]).filter((_,i)=>i!==idx);
-  todos[tid]={...todos[tid],items};
-  db.ref('/todos/'+tid+'/items').set(items);
-  renderTodos();
+function delGStoreItem(storeId,idx){
+  const stores=loadGStores();
+  const s=stores.find(x=>x.id===storeId);if(!s)return;
+  s.items=s.items.filter((_,i)=>i!==idx);
+  saveGStores(stores);renderTodos();
 }
 
-function clearCombinedDone(){
-  Object.entries(todos).forEach(([tid,t])=>{
-    const filtered=(t.items||[]).filter(i=>!i.checked);
-    if(filtered.length!==(t.items||[]).length){
-      todos[tid]={...todos[tid],items:filtered};
-      db.ref('/todos/'+tid+'/items').set(filtered);
-    }
-  });
-  renderTodos();
+function deleteGStore(id){
+  const stores=loadGStores();
+  const s=stores.find(x=>x.id===id);
+  if(!confirm('Delete "'+( s?s.name:'this store')+'" and all its items?'))return;
+  saveGStores(stores.filter(x=>x.id!==id));renderTodos();
 }
 
 function openNewTodoModal(){
   newTodoColor='pink';
-  document.getElementById('m-title').textContent='✅ New List';
+  document.getElementById('m-title').textContent='🛒 New Store';
   document.getElementById('m-body').innerHTML=`
     <div class="fg">
-      <label class="fl">List Name</label>
-      <input type="text" class="fi" id="todo-name-in" placeholder="e.g. Thrift Store, Errands, Home Depot...">
+      <label class="fl">Store Name</label>
+      <input type="text" class="fi" id="todo-name-in" placeholder="e.g. Target, Sprouts, Costco...">
     </div>
     <div class="fg">
       <label class="fl">Color</label>
-      <div class="color-pick">
+      <div class="color-pick" id="gtcolor-pick">
         ${TODO_COLORS.map(c=>`<div class="color-dot ${newTodoColor===c.id?'sel':''}" style="background:${c.bg};border-color:${c.txt}" onclick="setTodoColor('${c.id}')" id="cdot_${c.id}"></div>`).join('')}
       </div>
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
-      <button class="btn btn-p" onclick="doNewTodo()" style="flex:1">Create List</button>
+      <button class="btn btn-p" onclick="doNewTodo()" style="flex:1">Create Store</button>
     </div>
   `;
   showModal();
@@ -1616,97 +1801,234 @@ function openNewTodoModal(){
 
 function setTodoColor(id){
   newTodoColor=id;
-  document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('sel'));
-  const el=document.getElementById('cdot_'+id);
-  if(el)el.classList.add('sel');
+  document.querySelectorAll('#gtcolor-pick .color-dot').forEach(d=>d.classList.remove('sel'));
+  const el=document.getElementById('cdot_'+id);if(el)el.classList.add('sel');
 }
 
 function doNewTodo(){
   const name=document.getElementById('todo-name-in').value.trim();
-  if(!name){alert('Enter a list name.');return;}
-  const id='todo_'+Date.now();
-  db.ref('/todos/'+id).set({name,color:newTodoColor,items:[],createdAt:new Date().toISOString()});
+  if(!name){alert('Enter a store name.');return;}
+  const stores=loadGStores();
+  stores.push({id:'gs_'+Date.now(),name,color:newTodoColor,items:[]});
+  saveGStores(stores);
   closeModal();
+  renderTodos();
 }
 
-function openTodo(id){
-  if(document.getElementById('m-ov').classList.contains('open'))closeModal();
-  activeTodoId=id;
-  const t=todos[id];if(!t)return;
-  const items=t.items||[];
-  const unc=items.filter(i=>!i.checked);
-  const chk=items.filter(i=>i.checked);
-  const c=TODO_COLORS.find(col=>col.id===t.color)||TODO_COLORS[0];
-  document.getElementById('list-ohdr').style.background=c.txt;
-  document.getElementById('list-title').innerHTML=esc(t.name);
-  document.getElementById('list-inner').innerHTML=`
-    <div class="quick-add-row" style="margin:0 -16px 14px;padding:10px 16px;background:${c.bg}">
-      <input type="text" id="todo-add-in" placeholder="Add an item..." onkeydown="if(event.key==='Enter')doAddTodoItem()" style="background:rgba(255,255,255,.7)">
-      <button class="btn btn-sm" style="background:${c.txt};color:#fff;border:none" onclick="doAddTodoItem()">Add</button>
+// stubs kept for compatibility — these functions are no longer called in this tab
+function deleteTodoList(id){}
+function selectStore(tid){}
+function openEditTodoList(id){}
+function doEditTodoList(id){}
+function combinedItemHtml(){}
+function doAddCombinedItem(){}
+function togCombinedItem(){}
+function delCombinedItem(){}
+function clearCombinedDone(){}
+function openTodo(id){}
+function todoItemHtml(){}
+function doAddTodoItem(){}
+function togTodoItem(){}
+function delTodoItem(){}
+function clearTodoDone(){}
+
+// deleteTodo stub
+function deleteTodo(){}
+
+
+
+
+
+// ============================================================
+// LIST TAB — localStorage lists with color-coded items
+// ============================================================
+function loadLLists(){try{return JSON.parse(localStorage.getItem('kob_lists')||'[]');}catch{return[];}}
+function saveLLists(lists){localStorage.setItem('kob_lists',JSON.stringify(lists));}
+
+function renderList(){
+  if(activeListId)renderListDetail(activeListId);
+  else renderListIndex();
+}
+
+function renderListIndex(){
+  const el=document.getElementById('l-body');if(!el)return;
+  const lists=loadLLists();
+  if(!lists.length){
+    el.innerHTML=`
+      <div class="empty" style="padding-top:60px">
+        <div class="ei">📋</div>
+        <p style="font-size:16px;font-weight:700;color:var(--pri);margin-bottom:8px">No lists yet</p>
+        <p style="font-size:14px;line-height:1.6">Tap <strong style="background:var(--acc);color:#fff;padding:1px 8px;border-radius:6px">+</strong> to create your first list</p>
+      </div>`;
+    return;
+  }
+  el.innerHTML=`
+    <div class="shdr"><span class="stitle">My Lists</span><span style="font-size:13px;color:var(--mut)">${lists.length} list${lists.length!==1?'s':''}</span></div>
+    <div style="padding:0 16px">
+      ${lists.map(list=>{
+        const c=TODO_COLORS.find(x=>x.id===list.color)||TODO_COLORS[0];
+        const cnt=(list.items||[]).length;
+        return `<div onclick="openListDetail('${list.id}')"
+          style="display:flex;align-items:center;gap:14px;padding:16px;margin-bottom:10px;background:var(--sur);border-radius:16px;box-shadow:0 2px 8px rgba(140,34,82,.08);cursor:pointer;border:1.5px solid ${c.bg};transition:transform .15s" ontouchstart="" onmousedown="this.style.transform='scale(.98)'" onmouseup="this.style.transform=''" ontouchend="this.style.transform=''">
+          <div style="width:14px;height:14px;border-radius:50%;background:${c.txt};flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.2)"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--pri);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(list.name)}</div>
+            <div style="font-size:12px;color:var(--mut);margin-top:2px">${cnt} item${cnt!==1?'s':''}</div>
+          </div>
+          <span style="font-size:20px;color:var(--acc)">›</span>
+        </div>`;
+      }).join('')}
     </div>
-    ${!items.length
-      ?`<div style="text-align:center;color:var(--mut);padding:24px 0;font-size:14px">No items yet — type above to add!</div>`
-      :`<div>
-          ${unc.map(item=>todoItemHtml(item,items.indexOf(item),c.txt)).join('')}
-          ${chk.length?`<div style="padding:8px 0 4px;font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.6px">Done ✓ (${chk.length})</div>
-          ${chk.map(item=>todoItemHtml(item,items.indexOf(item),c.txt)).join('')}`:''}
-        </div>`
-    }
-    ${chk.length?`<button class="btn btn-s btn-full" onclick="clearTodoDone()" style="margin-top:10px">Clear completed (${chk.length})</button>`:''}
-    <div style="height:8px"></div>
+    <div style="height:80px"></div>
   `;
+}
+
+function openListDetail(id){
+  activeListId=id;
+  const lists=loadLLists();
+  const list=lists.find(l=>l.id===id);if(!list)return;
+  const c=TODO_COLORS.find(x=>x.id===list.color)||TODO_COLORS[0];
+  document.getElementById('list-ohdr').style.background=c.txt;
+  document.getElementById('list-title').textContent=list.name;
+  renderListInner(list,c);
   showListView();
-  setTimeout(()=>document.getElementById('todo-add-in')?.focus(),300);
 }
 
-function todoItemHtml(item,idx,accentColor){
-  return `<div class="sitem">
-    <button class="schk ${item.checked?'done':''}" onclick="togTodoItem(${idx})" style="${item.checked?'':'border-color:'+accentColor}">${item.checked?'✓':''}</button>
-    <span class="sname ${item.checked?'done':''}" style="flex:1">${esc(item.text||item.name||'')}</span>
-    <button class="sdel" onclick="delTodoItem(${idx})">×</button>
-  </div>`;
+function renderListDetail(id){
+  const lists=loadLLists();
+  const list=lists.find(l=>l.id===id);if(!list){renderListIndex();return;}
+  const c=TODO_COLORS.find(x=>x.id===list.color)||TODO_COLORS[0];
+  document.getElementById('list-ohdr').style.background=c.txt;
+  document.getElementById('list-title').textContent=list.name;
+  renderListInner(list,c);
+  showListView();
 }
 
-function doAddTodoItem(){
-  const el=document.getElementById('todo-add-in');
-  const text=el?el.value.trim():'';
-  if(!text)return;
-  const t=todos[activeTodoId];if(!t)return;
-  const items=[...(t.items||[]),{text,checked:false}];
-  db.ref('/todos/'+activeTodoId+'/items').set(items);
-  if(el)el.value='';
-  setTimeout(()=>openTodo(activeTodoId),200);
+function renderListInner(list,c){
+  const items=list.items||[];
+  document.getElementById('list-inner').innerHTML=`
+    <div style="padding:12px 16px 12px;background:${c.bg};border-bottom:1.5px solid rgba(0,0,0,.07)">
+      <button onclick="openNewListItemForm()"
+        style="width:100%;padding:13px;background:${c.txt};color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.2px">+ Add Item</button>
+    </div>
+    <div style="padding:0 16px">
+      ${!items.length
+        ?`<div style="text-align:center;color:var(--mut);padding:36px 0;font-size:14px">No items yet — tap + to add!</div>`
+        :items.map(item=>{
+          const ic=TODO_COLORS.find(x=>x.id===item.color)||TODO_COLORS[0];
+          return `<div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--bor)">
+            <div style="width:12px;height:12px;border-radius:50%;background:${ic.txt};flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.15)"></div>
+            <span style="flex:1;font-size:16px;font-weight:600;color:var(--txt);line-height:1.3">${esc(item.text)}</span>
+            <button onclick="deleteListItem('${list.id}','${item.id}')"
+              style="width:34px;height:34px;border-radius:50%;border:none;background:rgba(0,0,0,.06);font-size:16px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+          </div>`;
+        }).join('')
+      }
+    </div>
+    <div style="padding:16px 16px 8px">
+      <button class="btn btn-d btn-full" onclick="confirmDeleteList('${list.id}')">🗑️ Delete This List</button>
+    </div>
+    <div style="height:16px"></div>
+  `;
 }
 
-function togTodoItem(idx){
-  const t=todos[activeTodoId];if(!t)return;
-  const items=(t.items||[]).map((item,i)=>i===idx?{...item,checked:!item.checked}:item);
-  db.ref('/todos/'+activeTodoId+'/items').set(items);
-  setTimeout(()=>openTodo(activeTodoId),150);
+function deleteListItem(listId,itemId){
+  const lists=loadLLists();
+  const list=lists.find(l=>l.id===listId);if(!list)return;
+  list.items=(list.items||[]).filter(i=>i.id!==itemId);
+  saveLLists(lists);
+  const c=TODO_COLORS.find(x=>x.id===list.color)||TODO_COLORS[0];
+  renderListInner(list,c);
 }
 
-function delTodoItem(idx){
-  const t=todos[activeTodoId];if(!t)return;
-  const items=(t.items||[]).filter((_,i)=>i!==idx);
-  db.ref('/todos/'+activeTodoId+'/items').set(items);
-  setTimeout(()=>openTodo(activeTodoId),150);
+function confirmDeleteList(id){
+  if(!confirm('Delete this list and all its items? Cannot be undone.'))return;
+  saveLLists(loadLLists().filter(l=>l.id!==id));
+  closeListView();
 }
 
-function clearTodoDone(){
-  const t=todos[activeTodoId];if(!t)return;
-  db.ref('/todos/'+activeTodoId+'/items').set((t.items||[]).filter(i=>!i.checked));
-  setTimeout(()=>openTodo(activeTodoId),150);
+function openNewListForm(){
+  lNewColor='pink';
+  document.getElementById('m-title').textContent='📋 New List';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg">
+      <label class="fl">List Name</label>
+      <input type="text" class="fi" id="new-list-name" placeholder="e.g. Costco, Weekend Project, Gifts...">
+    </div>
+    <div class="fg">
+      <label class="fl">Color</label>
+      <div class="color-pick" id="lcolor-pick">
+        ${TODO_COLORS.map(c=>`<div class="color-dot ${lNewColor===c.id?'sel':''}" style="background:${c.bg};border-color:${c.txt}" onclick="setLNewColor('${c.id}')" id="lcdot_${c.id}"></div>`).join('')}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" onclick="doCreateList()" style="flex:1">Create List</button>
+    </div>
+  `;
+  showModal();
+  setTimeout(()=>document.getElementById('new-list-name')?.focus(),300);
 }
 
-function deleteTodo(e,id){
-  e.stopPropagation();
-  if(!confirm('Delete "'+todos[id]?.name+'" list and all its items?'))return;
-  db.ref('/todos/'+id).remove();
+function setLNewColor(id){
+  lNewColor=id;
+  document.querySelectorAll('#lcolor-pick .color-dot').forEach(d=>d.classList.remove('sel'));
+  const el=document.getElementById('lcdot_'+id);if(el)el.classList.add('sel');
 }
 
+function doCreateList(){
+  const name=document.getElementById('new-list-name').value.trim();
+  if(!name){alert('Enter a list name.');return;}
+  const lists=loadLLists();
+  lists.push({id:'list_'+Date.now(),name,color:lNewColor,items:[]});
+  saveLLists(lists);
+  activeListId=null;
+  closeModal();
+  renderListIndex();
+}
 
+function openNewListItemForm(){
+  lNewItemColor='pink';
+  document.getElementById('m-title').textContent='+ Add Item';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg">
+      <label class="fl">Item Name</label>
+      <input type="text" class="fi" id="new-item-name" placeholder="Type item name..."
+        onkeydown="if(event.key==='Enter')doAddListItem()">
+    </div>
+    <div class="fg">
+      <label class="fl">Color</label>
+      <div class="color-pick" id="icolor-pick">
+        ${TODO_COLORS.map(c=>`<div class="color-dot ${lNewItemColor===c.id?'sel':''}" style="background:${c.bg};border-color:${c.txt}" onclick="setLNewItemColor('${c.id}')" id="icdot_${c.id}"></div>`).join('')}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" onclick="doAddListItem()" style="flex:1">Add Item</button>
+    </div>
+  `;
+  showModal();
+  setTimeout(()=>document.getElementById('new-item-name')?.focus(),300);
+}
 
+function setLNewItemColor(id){
+  lNewItemColor=id;
+  document.querySelectorAll('#icolor-pick .color-dot').forEach(d=>d.classList.remove('sel'));
+  const el=document.getElementById('icdot_'+id);if(el)el.classList.add('sel');
+}
 
+function doAddListItem(){
+  const text=document.getElementById('new-item-name').value.trim();
+  if(!text){alert('Enter an item name.');return;}
+  const lists=loadLLists();
+  const list=lists.find(l=>l.id===activeListId);if(!list)return;
+  if(!list.items)list.items=[];
+  list.items.push({id:'item_'+Date.now(),text,color:lNewItemColor});
+  saveLLists(lists);
+  closeModal();
+  const c=TODO_COLORS.find(x=>x.id===list.color)||TODO_COLORS[0];
+  renderListInner(list,c);
+}
 
 // ============================================================
 // CUSTOM BAKE SCHEDULE EDITOR
@@ -1999,7 +2321,9 @@ function showListView(){
 function closeListView(){
   document.getElementById('list-ov').classList.remove('open');
   document.body.style.overflow='';
-  activeGListId=null;activeTodoId=null;
+  const wasListOpen=!!activeListId;
+  activeGListId=null;activeTodoId=null;activeListId=null;
+  if(wasListOpen&&curView==='list')renderListIndex();
 }
 
 function showModal(){document.getElementById('m-ov').classList.add('open');document.body.style.overflow='hidden';}
