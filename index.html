@@ -8,12 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Keep On Baking">
   <title>Keep On Baking</title>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js">
-function confirmDeleteGList(id, name){
-  if(!confirm('Delete "' + name + '" and all its items?\nThis cannot be undone.'))return;
-  db.ref('/grocery/lists/'+id).remove();
-}
-</script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -206,28 +201,56 @@ function confirmDeleteGList(id, name){
     .dnote-row{padding:8px 14px;}
     .dnote-in{width:100%;padding:7px 10px;border:1.5px solid var(--bor);border-radius:8px;font-size:13px;background:var(--bg);color:var(--txt);}
 
-    /* SHOPPING */
-    .shop-tabs{display:flex;background:var(--sur);border-bottom:1.5px solid var(--bor);overflow-x:auto;scrollbar-width:none;}
-    .shop-tabs::-webkit-scrollbar{display:none;}
-    .stab{flex-shrink:0;flex:1;padding:13px 10px;text-align:center;font-size:13px;font-weight:700;color:var(--mut);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;}
-    .stab.active{color:var(--acc);border-bottom-color:var(--acc);}
+    /* SHOPPING — NEW INLINE STORE LAYOUT */
+    .store-section{margin:12px 16px 0;border-radius:18px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.12);}
+    .store-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;}
+    .store-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;}
+    .store-count{font-size:12px;color:rgba(255,255,255,.8);font-weight:700;}
+    .store-menu-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.35);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .store-item-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.05);background:#fff;}
+    .store-item-row.done-row{background:#fafafa;}
+    .store-check-btn{width:28px;height:28px;border-radius:50%;border:2.5px solid;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;transition:all .2s;}
+    .store-item-text{flex:1;font-size:16px;font-weight:600;color:var(--txt);}
+    .store-item-text.done{text-decoration:line-through;color:var(--mut);font-weight:400;}
+    .store-item-qty{font-size:13px;color:var(--mut);flex-shrink:0;margin-right:4px;}
+    .store-del-btn{width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,.06);font-size:16px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .store-add-row{display:flex;gap:8px;padding:12px 14px;}
+    .store-add-input{flex:1;padding:11px 13px;border:1.5px solid rgba(0,0,0,.14);border-radius:10px;font-size:15px;background:rgba(255,255,255,.85);color:var(--txt);}
+    .store-add-input:focus{outline:none;border-color:rgba(0,0,0,.32);background:#fff;}
+    .store-clear-row{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 10px;}
 
-    .slist{padding:0 16px;}
-    .sitem{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--bor);}
-    .sitem:last-child{border-bottom:none;}
-    .schk{width:26px;height:26px;border-radius:50%;border:2px solid var(--bor);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;color:#fff;transition:all .2s;}
-    .schk.done{background:var(--ok);border-color:var(--ok);}
-    .sname{flex:1;font-size:15px;font-weight:700;color:var(--txt);}
-    .sname.done{text-decoration:line-through;color:var(--mut);font-weight:400;}
-    .sqty{font-size:13px;color:var(--mut);flex-shrink:0;}
-    .ssrc{font-size:11px;color:var(--mut);margin-top:2px;}
-    .sdel{background:none;border:none;color:var(--bor);font-size:18px;cursor:pointer;padding:4px;flex-shrink:0;}
+    /* MISC */
+    .empty{padding:40px 16px;text-align:center;color:var(--mut);}
+    .empty .ei{font-size:48px;margin-bottom:12px;}
+    input[type=date]{padding:11px 13px;border:1.5px solid var(--bor);border-radius:10px;font-size:15px;background:var(--sur);color:var(--txt);width:100%;}
+    .picker-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--bor);cursor:pointer;}
+    .picker-item:last-child{border-bottom:none;}
+    .picker-th{width:46px;height:46px;border-radius:10px;object-fit:cover;flex-shrink:0;}
+    .picker-ph{width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,#FAE8EF,#F5D0DC);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
 
-    /* TRIP LIST */
-    .trip-card{background:var(--sur);border-radius:14px;padding:14px 16px;margin:0 16px 10px;box-shadow:0 2px 8px rgba(140,34,82,.08);display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
-    .trip-card:active{transform:scale(.98);}
-    .trip-name{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--pri);}
-    .trip-meta{font-size:12px;color:var(--mut);margin-top:3px;}
+    /* DAY PICKER */
+    .day-pick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+    .day-pick-btn{padding:10px 4px;border-radius:10px;border:1.5px solid var(--bor);background:var(--sur);font-size:12px;font-weight:700;color:var(--txt);cursor:pointer;text-align:center;transition:all .2s;}
+    .day-pick-btn.today-d{border-color:var(--acc);color:var(--acc);}
+    .day-pick-btn.sel{background:var(--acc);border-color:var(--acc);color:#fff;}
+    .slot-pick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .slot-pick-btn{padding:12px;border-radius:10px;border:1.5px solid var(--bor);background:var(--sur);font-size:13px;font-weight:700;color:var(--txt);cursor:pointer;text-align:center;}
+    .slot-pick-btn:active{background:var(--acc-lt);}
+    .slot-pick-btn.sel{background:var(--acc-lt);border-color:var(--acc);}
+
+    .shop-card{margin:10px 16px 0;background:linear-gradient(135deg,#FAE8EF,#FDF5F7);border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 3px 12px rgba(140,34,82,.12);border:1.5px solid var(--bor);}
+    .shop-card:active{transform:scale(.98);}
+    .shop-card-left{display:flex;align-items:center;gap:14px;}
+    .shop-card-icon{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--pri),var(--acc));display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+    .shop-card-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--pri);}
+    .shop-card-sub{font-size:13px;color:var(--mut);margin-top:2px;}
+    .quote-card{margin:10px 16px 0;background:linear-gradient(135deg,#FAE8EF,#FDF5F7);border-radius:16px;padding:14px 16px;border-left:4px solid var(--acc);box-shadow:0 2px 12px rgba(140,34,82,.1);}
+    .quote-text{font-family:'Playfair Display',serif;font-size:14px;font-style:italic;color:var(--pri);line-height:1.6;}
+    .quote-ref{font-size:12px;color:var(--mut);margin-top:6px;font-weight:700;}
+
+    .color-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+    .color-dot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s;}
+    .color-dot.sel{border-color:var(--pri);transform:scale(1.15);}
 
     /* STARTER */
     .sc-card{margin:16px;background:var(--sur);border-radius:20px;overflow:hidden;box-shadow:0 6px 20px rgba(140,34,82,.15);}
@@ -248,78 +271,16 @@ function confirmDeleteGList(id, name){
     .blog-entry{padding:10px 14px;border-bottom:1px solid var(--bor);}
     .blog-date{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
 
-    /* MISC */
-    .empty{padding:40px 16px;text-align:center;color:var(--mut);}
-    .empty .ei{font-size:48px;margin-bottom:12px;}
-    input[type=date]{padding:11px 13px;border:1.5px solid var(--bor);border-radius:10px;font-size:15px;background:var(--sur);color:var(--txt);width:100%;}
-    .picker-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--bor);cursor:pointer;}
-    .picker-item:last-child{border-bottom:none;}
-    .picker-th{width:46px;height:46px;border-radius:10px;object-fit:cover;flex-shrink:0;}
-    .picker-ph{width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,#FAE8EF,#F5D0DC);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-
-    /* DAY PICKER (add to calendar) */
-    .day-pick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
-    .day-pick-btn{padding:10px 4px;border-radius:10px;border:1.5px solid var(--bor);background:var(--sur);font-size:12px;font-weight:700;color:var(--txt);cursor:pointer;text-align:center;transition:all .2s;}
-    .day-pick-btn.today-d{border-color:var(--acc);color:var(--acc);}
-    .day-pick-btn.sel{background:var(--acc);border-color:var(--acc);color:#fff;}
-    .slot-pick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-    .slot-pick-btn{padding:12px;border-radius:10px;border:1.5px solid var(--bor);background:var(--sur);font-size:13px;font-weight:700;color:var(--txt);cursor:pointer;text-align:center;}
-    .slot-pick-btn:active{background:var(--acc-lt);}
-    .slot-pick-btn.sel{background:var(--acc-lt);border-color:var(--acc);}
-
-    .shop-card{margin:10px 16px 0;background:linear-gradient(135deg,#FAE8EF,#FDF5F7);border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 3px 12px rgba(140,34,82,.12);border:1.5px solid var(--bor);}
-    .shop-card:active{transform:scale(.98);}
-    .shop-card-left{display:flex;align-items:center;gap:14px;}
-    .shop-card-icon{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--pri),var(--acc));display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
-    .shop-card-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--pri);}
-    .shop-card-sub{font-size:13px;color:var(--mut);margin-top:2px;}
-    .quote-card{margin:10px 16px 0;background:linear-gradient(135deg,#FAE8EF,#FDF5F7);border-radius:16px;padding:14px 16px;border-left:4px solid var(--acc);box-shadow:0 2px 12px rgba(140,34,82,.1);}
-    .quote-text{font-family:'Playfair Display',serif;font-size:14px;font-style:italic;color:var(--pri);line-height:1.6;}
-    .quote-ref{font-size:12px;color:var(--mut);margin-top:6px;font-weight:700;}
-    .shop-opt-btn{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;border:1.5px solid var(--bor);background:var(--sur);width:100%;cursor:pointer;text-align:left;transition:all .2s;margin-bottom:10px;}
-    .shop-opt-btn:active{background:var(--acc-lt);border-color:var(--acc);}
-    .shop-opt-icon{font-size:30px;flex-shrink:0;}
-    .shop-opt-title{font-weight:700;font-size:16px;color:var(--txt);}
-    .shop-opt-sub{font-size:13px;color:var(--mut);margin-top:2px;}
-
-    .todo-card{margin:0 16px 10px;border-radius:16px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 2px 8px rgba(140,34,82,.08);border:1px solid rgba(0,0,0,.05);}
-    .todo-card:active{transform:scale(.98);}
-    .todo-name{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;}
-    .todo-meta{font-size:12px;opacity:.75;margin-top:3px;}
-    .color-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
-    .color-dot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s;}
-    .color-dot.sel{border-color:var(--pri);transform:scale(1.15);}
-    .weekly-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--bor);}
-    .weekly-item:last-child{border-bottom:none;}
-    .combine-pick{display:flex;flex-direction:column;gap:10px;}
-    .combine-opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--bor);background:var(--sur);cursor:pointer;}
-    .combine-opt.sel{border-color:var(--acc);background:var(--acc-lt);}
-    .quick-add-row{display:flex;gap:8px;padding:10px 16px;background:var(--sur);border-bottom:1.5px solid var(--bor);}
-    .quick-add-row input{flex:1;padding:10px 12px;border:1.5px solid var(--bor);border-radius:8px;font-size:15px;background:var(--bg);color:var(--txt);}
-
-    .cal-month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:8px;}
-
     #list-ov .s-ohdr{display:flex;align-items:center;gap:12px;}
     #list-ov .title{flex:1;text-align:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:600;}
     #list-inner{padding:0;}
 
-    /* SHOPPING — NEW INLINE STORE LAYOUT */
-    .store-section{margin:12px 16px 0;border-radius:18px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.12);}
-    .store-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;}
-    .store-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;}
-    .store-count{font-size:12px;color:rgba(255,255,255,.8);font-weight:700;}
-    .store-menu-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.35);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-    .store-item-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.05);background:#fff;}
-    .store-item-row.done-row{background:#fafafa;}
-    .store-check-btn{width:28px;height:28px;border-radius:50%;border:2.5px solid;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;transition:all .2s;}
-    .store-item-text{flex:1;font-size:16px;font-weight:600;color:var(--txt);}
-    .store-item-text.done{text-decoration:line-through;color:var(--mut);font-weight:400;}
-    .store-item-qty{font-size:13px;color:var(--mut);flex-shrink:0;margin-right:4px;}
-    .store-del-btn{width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,.06);font-size:16px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-    .store-add-row{display:flex;gap:8px;padding:12px 14px;}
-    .store-add-input{flex:1;padding:11px 13px;border:1.5px solid rgba(0,0,0,.14);border-radius:10px;font-size:15px;background:rgba(255,255,255,.85);color:var(--txt);}
-    .store-add-input:focus{outline:none;border-color:rgba(0,0,0,.32);background:#fff;}
-    .store-clear-row{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 10px;}
+    /* MIGRATION BANNER */
+    .migrate-banner{margin:12px 16px 0;padding:14px 16px;background:linear-gradient(135deg,#FFF8DC,#FFFACD);border-radius:16px;border:2px solid #F0C040;box-shadow:0 2px 12px rgba(240,192,64,.25);}
+    .migrate-banner-title{font-size:15px;font-weight:700;color:#7A5A00;margin-bottom:4px;}
+    .migrate-banner-sub{font-size:13px;color:#A07820;line-height:1.5;margin-bottom:12px;}
+    .migrate-banner-btn{width:100%;padding:12px;background:#7A5A00;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.2px;}
+    .migrate-banner-btn:active{opacity:.85;}
   </style>
 </head>
 <body>
@@ -335,6 +296,7 @@ function confirmDeleteGList(id, name){
     <div class="view active" id="view-dashboard"><div id="d-body"></div></div>
     <div class="view" id="view-recipes"><div id="r-body"></div></div>
     <div class="view" id="view-calendar"><div id="c-body"></div></div>
+    <!-- ✅ FIXED: Grocery tab now uses view-grocery (Firebase-backed) -->
     <div class="view" id="view-grocery"><div id="g-body"></div></div>
     <div class="view" id="view-todos"><div id="t-body"></div></div>
     <div class="view" id="view-list"><div id="l-body"></div></div>
@@ -350,10 +312,11 @@ function confirmDeleteGList(id, name){
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar
     </button>
     <button class="nbtn" data-v="list" onclick="nav('list')">
-      <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>List
+      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Lists
     </button>
-    <button class="nbtn" data-v="todos" onclick="nav('todos')">
-      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Grocery
+    <!-- ✅ FIXED: Now navigates to 'grocery' (Firebase) instead of 'todos' (localStorage) -->
+    <button class="nbtn" data-v="grocery" onclick="nav('grocery')">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Grocery
     </button>
   </nav>
   <button class="fab" id="fab" onclick="fabAct()">+</button>
@@ -426,20 +389,13 @@ const SLOTS=[
   {id:'dessert',label:'Dessert',cats:['dessert','baked']},
 ];
 
-// Default bake schedule - overridden by user's custom schedule from Firebase
 const SD_DEFAULT=[
   {offset:-3,emoji:'🌾',label:'Feed Starter / Levain Build'},
   {offset:-2,emoji:'🥣',label:'Mix Dough + Bulk Ferment'},
   {offset:-1,emoji:'🔄',label:'Shape + Cold Proof (fridge)'},
   {offset:0, emoji:'🔥',label:'Score & Bake!'},
 ];
-let SD=[...SD_DEFAULT]; // will be overridden by Firebase
-
-const STAPLE_DEF=[
-  'All-purpose flour','Bread flour','Butter','Eggs','Sugar','Brown sugar',
-  'Salt','Olive oil','Milk','Baking powder','Baking soda','Active dry yeast',
-  'Honey','Vanilla extract'
-].map(n=>({name:n,qty:'',checked:false}));
+let SD=[...SD_DEFAULT];
 
 // ============================================================
 // STATE
@@ -467,11 +423,13 @@ let newGColor='red',newGEmoji='🛒';
 let recipes={},calD={},ideas={},groceryLists={};
 let starterD={lastFed:null,location:'counter',tempNote:'',bakeDay:null};
 let bakeLog={},shopItems=[],shopStaples=[];
-let curView='dashboard',wkOff=0,rFilt='all',rTab='recipes',shopTab='list',todoTab=null,calDayDetail=null;
+let curView='dashboard',wkOff=0,rFilt='all',rTab='recipes',shopTab='list',calDayDetail=null;
 let calMonth=new Date().getMonth(),calYear=new Date().getFullYear();
 let todos={},newTodoColor='pink',selectedStoreId=null;
 let activeListId=null,lNewColor='pink',lNewItemColor='pink';
+let activeGListId=null;
 let pendingPhoto=null,rFormCat=null,rFormServ=4,editingRid=null,addShopRid=null;
+let calPickRid=null,calPickStep=1,calPickDs=null;
 
 // ============================================================
 // FIREBASE LISTENERS
@@ -495,7 +453,6 @@ function initFB(){
   });
   db.ref('/starter').on('value',s=>{
     starterD=Object.assign({lastFed:null,location:'counter',tempNote:'',bakeDay:null},s.val()||{});
-    // sync custom schedule if user has saved one
     if(s.val()&&s.val().schedule) SD=[...s.val().schedule];
     if(document.getElementById('s-ov').classList.contains('open'))renderStarter();
     if(curView==='dashboard')renderDash();
@@ -504,8 +461,6 @@ function initFB(){
     bakeLog=s.val()||{};
     if(document.getElementById('s-ov').classList.contains('open'))renderStarter();
   });
-
-
   db.ref('/grocery/lists').on('value',s=>{
     groceryLists=s.val()||{};
     if(curView==='grocery')renderGrocery();
@@ -513,11 +468,7 @@ function initFB(){
   });
   db.ref('/todos').on('value',s=>{
     todos=s.val()||{};
-    if(curView==='todos')renderTodos();
-    if(curView==='dashboard')renderDash();
   });
-
-
 }
 function setSS(s,t){
   const d=document.getElementById('sdot'),tx=document.getElementById('stxt');
@@ -532,7 +483,7 @@ function nav(v){
   document.querySelectorAll('.nbtn').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
   document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.id==='view-'+v));
   const fab=document.getElementById('fab');
-  fab.style.display=(v==='recipes'||v==='grocery'||v==='todos'||v==='list')?'flex':'none';
+  fab.style.display=(v==='recipes'||v==='grocery'||v==='list')?'flex':'none';
   render();
 }
 function render(){
@@ -540,7 +491,6 @@ function render(){
   else if(curView==='recipes')renderRecipes();
   else if(curView==='calendar')renderCalendar();
   else if(curView==='grocery')renderGrocery();
-  else if(curView==='todos')renderTodos();
   else if(curView==='list')renderList();
 }
 function fabAct(){
@@ -548,13 +498,9 @@ function fabAct(){
     if(rTab==='recipes')openRecipeForm(null);
     else openIdeaForm(null);
   } else if(curView==='grocery')openNewGListModal();
-  else if(curView==='todos')openNewTodoModal();
   else if(curView==='list'){if(activeListId)openNewListItemForm();else openNewListForm();}
 }
 
-// ============================================================
-// DASHBOARD
-// ============================================================
 // ============================================================
 // GREETINGS & QUOTES
 // ============================================================
@@ -586,7 +532,6 @@ function getDayIdx(){
   const now=new Date();
   return Math.floor((now-new Date(now.getFullYear(),0,0))/(1000*60*60*24));
 }
-
 function getDashGreeting(){
   const h=new Date().getHours();
   const dayIdx=getDayIdx();
@@ -594,6 +539,9 @@ function getDashGreeting(){
   return grp.msgs[dayIdx%grp.msgs.length];
 }
 
+// ============================================================
+// DASHBOARD
+// ============================================================
 function renderDash(){
   const el=document.getElementById('d-body');
   const today=fmtD(new Date());
@@ -603,12 +551,8 @@ function renderDash(){
   const subtitle=SUBTITLES[dayIdx%SUBTITLES.length];
   const quote=QUOTES[dayIdx%QUOTES.length];
   const activeItems=Object.values(groceryLists).reduce((s,l)=>s+(l.items||[]).filter(i=>!i.checked).length,0);
-  const totalItems=Object.values(groceryLists).reduce((s,l)=>s+(l.items||[]).length,0);
   const gListCount=Object.keys(groceryLists).length;
   const shopSub=gListCount>0?`${activeItems} item${activeItems!==1?'s':''} across ${gListCount} store${gListCount!==1?'s':''}`:'Tap + to add your first store';
-  const todoActive=Object.values(todos).reduce((sum,t)=>sum+(t.items||[]).filter(i=>!i.checked).length,0);
-
-  // Detect tonight's dinner for the dashboard card
   const todayDay=calD[today]||{};
   const dinnerRaw=todayDay.dinner;
   const dinnerV=dinnerRaw?(typeof dinnerRaw==='object'?{name:'Recipe',emoji:'🍽️',id:null}:getMealDisplay(dinnerRaw)):null;
@@ -641,7 +585,6 @@ function renderDash(){
       <h2>${greeting}</h2>
       <p>${subtitle}</p>
     </div>
-
     <div class="quote-card">
       <div class="quote-text">"${quote.text}"</div>
       <div class="quote-ref">— ${quote.ref}</div>
@@ -654,27 +597,20 @@ function renderDash(){
         ${dinnerV.id?`<button class="t-btn t-btn-o" onclick="openRecipeDetail('${dinnerV.id}')">📖 Recipe</button>`:''}
       </div>
     </div>`:''}
-
     <div class="shop-card" onclick="nav('grocery')">
       <div class="shop-card-left">
         <div class="shop-card-icon">🛍️</div>
         <div>
-          <div class="shop-card-title">Shopping List</div>
+          <div class="shop-card-title">Shopping Lists</div>
           <div class="shop-card-sub">${shopSub}</div>
         </div>
       </div>
       <span style="font-size:22px;color:var(--acc)">›</span>
     </div>
-
-    ${todoActive>0?`<div style="margin:10px 16px 0;padding:12px 14px;background:var(--sur);border-radius:14px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(140,34,82,.08)">
-      <span style="font-size:14px;font-weight:700;color:var(--pri)">✅ Lists: ${todoActive} item${todoActive!==1?'s':''} remaining</span>
-      <button onclick="nav('todos')" style="border:none;background:none;font-size:13px;font-weight:700;color:var(--acc);cursor:pointer">View →</button>
-    </div>`:''}
     ${ss?`<div style="margin:10px 16px 0;padding:12px 14px;background:var(--sur);border-radius:14px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(140,34,82,.08)">
       <span style="font-size:14px;font-weight:700;color:var(--pri)">🌱 Starter: ${ss.emoji} ${ss.label}</span>
       <button onclick="openStarter()" style="border:none;background:none;font-size:13px;font-weight:700;color:var(--acc);cursor:pointer">Manage →</button>
     </div>`:''}
-
     <div class="shdr">
       <span class="stitle">This Week</span>
       <button onclick="nav('calendar')" style="border:none;background:none;font-size:13px;font-weight:700;color:var(--acc);cursor:pointer">Full Calendar →</button>
@@ -684,29 +620,8 @@ function renderDash(){
   `;
 }
 
-function openShoppingCard(){
-  document.getElementById('m-title').textContent='✨ Create a List';
-  document.getElementById('m-body').innerHTML=`
-    <p style="font-size:14px;color:var(--mut);margin-bottom:16px">What kind of list?</p>
-    <button class="shop-opt-btn" onclick="closeModal();nav('grocery');setTimeout(openNewGListModal,300)">
-      <span class="shop-opt-icon">🛒</span>
-      <div><div class="shop-opt-title">Grocery List</div><div class="shop-opt-sub">For food, baking ingredients, errands</div></div>
-    </button>
-    <button class="shop-opt-btn" onclick="closeModal();nav('todos');setTimeout(openNewTodoModal,300)">
-      <span class="shop-opt-icon">✅</span>
-      <div><div class="shop-opt-title">To-Do List</div><div class="shop-opt-sub">Tasks, errands, things to buy anywhere</div></div>
-    </button>
-    <div style="height:8px"></div>
-  `;
-  showModal();
-}
-
-
-
 function editDashMeal(ds,slot){openSlotPicker(ds,slot,true);}
-
 function quickAddMeal(ds){
-  // Step 1: pick meal slot
   document.getElementById('m-title').textContent='Add to '+new Date(ds+'T12:00:00').toLocaleDateString('en',{weekday:'long',month:'short',day:'numeric'});
   document.getElementById('m-body').innerHTML=`
     <p style="font-size:13px;color:var(--mut);margin-bottom:14px">Which meal?</p>
@@ -763,7 +678,7 @@ function renderRTab(){
       <div class="shdr"><span class="stitle">Meal Ideas</span><span style="font-size:13px;color:var(--mut)">${ideaList.length} idea${ideaList.length!==1?'s':''}</span></div>
       ${ideaList.length
         ?`<div class="idea-grid">${ideaList.map(([id,idea])=>ideaCardHtml(id,idea)).join('')}</div><div style="height:16px"></div>`
-        :`<div class="empty"><div class="ei">💡</div><p>No ideas yet.<br>Tap + to capture a meal idea<br>before you forget!</p></div>`
+        :`<div class="empty"><div class="ei">💡</div><p>No ideas yet.<br>Tap + to capture a meal idea!</p></div>`
       }
     `;
   }
@@ -850,7 +765,6 @@ function adjDetServ(id,delta){
     </li>`).join('');
 }
 
-// Add to Calendar from Recipe Detail
 function openAddToCal(id){
   calPickRid=id;calPickStep=1;calPickDs=null;
   const dates=getWeekDates(0);
@@ -867,7 +781,7 @@ function openAddToCal(id){
           <div style="font-size:11px;opacity:.7">${d.toLocaleDateString('en',{month:'short',day:'numeric'})}</div>
         </button>`;
       }).join('')}
-      ${dates.length<8?`<button class="day-pick-btn" onclick="calPickDay('${fmtD(addDays(new Date(dates[6]+'T12:00:00'),1))}')"><div>Next</div><div style="font-size:11px;opacity:.7">week +</div></button>`:''}
+      <button class="day-pick-btn" onclick="calPickDay('${fmtD(addDays(new Date(dates[6]+'T12:00:00'),1))}')"><div>Next</div><div style="font-size:11px;opacity:.7">week +</div></button>
     </div>
     <div style="height:8px"></div>
   `;
@@ -893,58 +807,6 @@ function calPickSlot(slot){
   if(!calPickDs||!calPickRid)return;
   db.ref('/calendar/'+calPickDs+'/'+slot).set(calPickRid);
   closeModal();
-}
-
-// Add to Shopping
-function openAddToShop(id){
-  addShopRid=id;
-  const r=recipes[id];if(!r)return;
-  const base=r.servings||4;
-  document.getElementById('m-title').textContent='🛒 Add to Shopping List';
-  document.getElementById('m-body').innerHTML=`
-    <p style="font-size:14px;color:var(--mut);margin-bottom:14px">Adjust servings then add all ingredients.</p>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-      <span style="font-weight:700;color:var(--txt)">Servings:</span>
-      <div class="sv-ctr">
-        <button class="sv-btn" onclick="adjAddServ(-1)">−</button>
-        <span class="sv-num" id="add-sv" data-base="${base}">${base}</span>
-        <button class="sv-btn" onclick="adjAddServ(1)">+</button>
-      </div>
-    </div>
-    <div id="add-ing-prev">
-      ${(r.ingredients||[]).map(i=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bor);font-size:14px"><span>${esc(i.name)}</span><span style="color:var(--mut)">${esc(i.qty||'')}</span></div>`).join('')}
-    </div>
-    <div style="display:flex;gap:8px;margin-top:16px">
-      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
-      <button class="btn btn-p" onclick="doAddToShop()" style="flex:1">Add to List</button>
-    </div>
-  `;
-  showModal();
-}
-
-function adjAddServ(delta){
-  const el=document.getElementById('add-sv');if(!el)return;
-  const base=parseInt(el.dataset.base)||4;
-  const nxt=Math.max(1,(parseInt(el.textContent)||base)+delta);
-  el.textContent=nxt;
-  const r=recipes[addShopRid];if(!r||!r.ingredients)return;
-  const factor=nxt/base;
-  document.getElementById('add-ing-prev').innerHTML=r.ingredients.map(i=>`
-    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bor);font-size:14px">
-      <span>${esc(i.name)}</span><span style="color:var(--mut)">${esc(scaleQ(i.qty,factor))}</span>
-    </div>`).join('');
-}
-
-function doAddToShop(){
-  const r=recipes[addShopRid];if(!r)return;
-  const el=document.getElementById('add-sv');
-  const cur=el?parseInt(el.textContent)||r.servings||4:r.servings||4;
-  const factor=cur/(r.servings||4);
-  const ni2=(r.ingredients||[]).filter(i=>i.name).map(i=>({name:i.name,qty:scaleQ(i.qty,factor),checked:false,source:r.name}));
-  const lids=Object.keys(groceryLists);
-  if(lids.length>0){const tid=lids[0];db.ref('/grocery/lists/'+tid+'/items').set([...(groceryLists[tid]?.items||[]),...ni2]);}
-  else{const id='gl_'+Date.now();db.ref('/grocery/lists/'+id).set({name:r.name+' Ingredients',color:'green',emoji:'🍽️',items:ni2,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),pinned:false,shopping:false});}
-  closeModal();nav('grocery');
 }
 
 // ============================================================
@@ -1137,10 +999,7 @@ function openIdeaDetail(id){
 function promoteIdea(id){
   const idea=ideas[id];if(!idea)return;
   closeModal();
-  // Open recipe form pre-filled with idea name
   editingRid=null;pendingPhoto=null;rFormCat=null;rFormServ=4;
-  document.getElementById('m-title').textContent='New Recipe from Idea';
-  // slight delay for modal to close/reopen
   setTimeout(()=>{
     openRecipeForm(null);
     setTimeout(()=>{
@@ -1157,12 +1016,9 @@ function deleteIdea(id){
   db.ref('/ideas/'+id).remove();closeModal();
 }
 
-
 // ============================================================
 // CALENDAR
 // ============================================================
-// Monthly calendar state
-
 function renderCalendar(){
   if(calDayDetail){renderDayDetail(calDayDetail);return;}
   const el=document.getElementById('c-body');
@@ -1170,25 +1026,21 @@ function renderCalendar(){
   const firstDay=new Date(calYear,calMonth,1);
   const lastDay=new Date(calYear,calMonth+1,0);
   const monthName=firstDay.toLocaleDateString('en',{month:'long',year:'numeric'});
-  const startDow=firstDay.getDay(); // 0=Sun
+  const startDow=firstDay.getDay();
   const totalDays=lastDay.getDate();
   const todayStr=fmtD(now);
 
-  // Build day cells
   let cells='';
   for(let i=0;i<startDow;i++) cells+=`<div style="min-height:64px"></div>`;
   for(let d=1;d<=totalDays;d++){
     const ds=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const day=calD[ds]||{};
     const isToday=ds===todayStr;
-    const hasMeals=SLOTS.some(s=>day[s.id]);
     const hasBake=!!day.sourdough;
-    const hasNote=!!day.note;
-    cells+=`<div onclick="openDayDetail('${ds}')" style="min-height:58px;border-radius:8px;padding:5px;cursor:pointer;background:${isToday?'var(--acc)':'var(--sur)'};border:${isToday?'none':'1px solid var(--bor)'};box-shadow:${isToday?'0 2px 8px rgba(200,84,128,.3)':'none'};transition:all .15s">
+    cells+=`<div onclick="openDayDetail('${ds}')" style="min-height:58px;border-radius:8px;padding:5px;cursor:pointer;background:${isToday?'var(--acc)':'var(--sur)'};border:${isToday?'none':'1px solid var(--bor)'};box-shadow:${isToday?'0 2px 8px rgba(200,84,128,.3)':'none'}">
       <div style="font-size:12px;font-weight:700;color:${isToday?'#fff':'var(--pri)'};margin-bottom:3px">${d}</div>
-      ${hasBake?`<div style="font-size:9px;background:${isToday?'rgba(255,255,255,.3)':'#FFF3E8'};color:${isToday?'#fff':'#8B4513'};padding:1px 3px;border-radius:3px;margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4">${day.sourdough.emoji}</div>`:''}
-      ${SLOTS.filter(s=>day[s.id]).slice(0,2).map(s=>{const m=getMealDisplay(day[s.id]);return m?`<div style="font-size:9px;color:${isToday?'#fff':'var(--acc)'};font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4">${m.name.split(' ')[0]}</div>`:''}).join('')}
-      ${(hasMeals||hasBake)?'':`<div style="width:5px;height:5px;border-radius:50%;background:var(--bor);margin-top:4px"></div>`}
+      ${hasBake?`<div style="font-size:9px;background:${isToday?'rgba(255,255,255,.3)':'#FFF3E8'};color:${isToday?'#fff':'#8B4513'};padding:1px 3px;border-radius:3px;margin-bottom:1px">${day.sourdough.emoji}</div>`:''}
+      ${SLOTS.filter(s=>day[s.id]).slice(0,2).map(s=>{const m=getMealDisplay(day[s.id]);return m?`<div style="font-size:9px;color:${isToday?'#fff':'var(--acc)'};font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name.split(' ')[0]}</div>`:''}).join('')}
     </div>`;
   }
 
@@ -1201,9 +1053,7 @@ function renderCalendar(){
     <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--pri);padding:4px 8px 8px">
       ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div style="text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.7);padding:4px 0">${d}</div>`).join('')}
     </div>
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:8px;background:var(--bg)">
-      ${cells}
-    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:8px;background:var(--bg)">${cells}</div>
     <div style="height:16px"></div>
   `;
 }
@@ -1215,10 +1065,7 @@ function chMonth(delta){
   renderCalendar();
 }
 
-function openDayDetail(ds){
-  calDayDetail=ds;
-  renderDayDetail(ds);
-}
+function openDayDetail(ds){calDayDetail=ds;renderDayDetail(ds);}
 
 function renderDayDetail(ds){
   const el=document.getElementById('c-body');
@@ -1243,7 +1090,7 @@ function renderDayDetail(ds){
   }).join('');
 
   el.innerHTML=`
-    <div style="background:linear-gradient(135deg,var(--pri),var(--acc));color:#fff;padding:16px;display:flex;align-items:center;gap:12px;flex-shrink:0">
+    <div style="background:linear-gradient(135deg,var(--pri),var(--acc));color:#fff;padding:16px;display:flex;align-items:center;gap:12px">
       <button onclick="closeDayDetail()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;padding:8px 12px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">‹</button>
       <div>
         <div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:700">${d.toLocaleDateString('en',{weekday:'long',month:'long',day:'numeric'})}</div>
@@ -1265,19 +1112,12 @@ function renderDayDetail(ds){
   `;
 }
 
-function closeDayDetail(){
-  calDayDetail=null;
-  renderCalendar();
-}
-
+function closeDayDetail(){calDayDetail=null;renderCalendar();}
 function rmBakeStep(ds){
   if(!confirm('Remove this bake step from this day?'))return;
   db.ref('/calendar/'+ds+'/sourdough').remove();
   if(calDayDetail)renderDayDetail(ds);
 }
-
-
-function chWk(d){wkOff+=d;renderCalendar();}
 function saveDNote(ds,v){db.ref('/calendar/'+ds+'/note').set(v||null);}
 function rmSlot(ds,slot){db.ref('/calendar/'+ds+'/'+slot).remove();}
 
@@ -1314,7 +1154,7 @@ function openSlotPicker(ds,slot,isEdit){
               ${r.photoURL?`<img class="picker-th" src="${r.photoURL}" loading="lazy">`:`<div class="picker-ph">${c?.emoji||'🍽️'}</div>`}
               <div>
                 <div style="font-weight:700;font-size:15px;color:var(--txt)">${esc(r.name)}</div>
-                ${c?`<span class="pill ${c.cls}" style="margin-top:4px">${c.emoji} ${c.label}</span>`:''}
+                ${c?`<span class="pill ${c.cls}">${c.emoji} ${c.label}</span>`:''}
               </div>
             </div>`;
           }).join('')}</div>`
@@ -1333,20 +1173,88 @@ function addCustomMeal(ds,slot){
   db.ref('/calendar/'+ds+'/'+slot).set('custom:'+val);
   closeModal();
 }
-
 function assignSlot(ds,slot,rid){db.ref('/calendar/'+ds+'/'+slot).set(rid);closeModal();}
 
+// ============================================================
+// GROCERY — Firebase-backed, syncs across all devices
+// ============================================================
 
-// ============================================================
-// GROCERY — Inline color-coded store sections
-// ============================================================
+// ✅ NEW: Check for localStorage data that needs migrating and show a banner
+function getMigrationBanner(){
+  try{
+    const raw=localStorage.getItem('kob_gstores');
+    if(!raw)return'';
+    const stores=JSON.parse(raw);
+    if(!stores||!stores.length)return'';
+    return `<div class="migrate-banner">
+      <div class="migrate-banner-title">📱 Local stores found on this device!</div>
+      <div class="migrate-banner-sub">
+        ${stores.length} store${stores.length!==1?'s were':' was'} saved only on this phone/browser and
+        ${stores.length!==1?'aren\'t':'isn\'t'} visible to anyone else. Tap below to upload
+        ${stores.length!==1?'them':'it'} to the shared cloud so all devices stay in sync.
+      </div>
+      <button class="migrate-banner-btn" onclick="migrateLocalStores()">
+        ☁️ Upload ${stores.length} store${stores.length!==1?'s':''} to shared list
+      </button>
+    </div>`;
+  }catch(e){return'';}
+}
+
+// ✅ NEW: One-tap migration — reads localStorage, writes to Firebase, clears local copy
+function migrateLocalStores(){
+  const raw=localStorage.getItem('kob_gstores');
+  if(!raw){alert('No local stores found to migrate.');return;}
+  let stores;
+  try{stores=JSON.parse(raw);}catch(e){alert('Could not read local data.');return;}
+  if(!stores||!stores.length){localStorage.removeItem('kob_gstores');renderGrocery();return;}
+
+  // Map TODO_COLORS → GLIST_COLORS (best match)
+  const colorMap={pink:'pink',rose:'pink',purple:'purple',blue:'blue',teal:'teal',green:'green'};
+
+  const writes=stores.map(store=>{
+    const fbColor=colorMap[store.color]||'pink';
+    const items=(store.items||[]).map(item=>({
+      name:item.name||'',
+      qty:item.qty||'',
+      checked:item.checked||false
+    }));
+    // Preserve original ID so we don't create duplicates if tapped twice
+    const id=store.id||('gl_'+Date.now()+'_'+Math.random().toString(36).slice(2,7));
+    return db.ref('/grocery/lists/'+id).set({
+      name:store.name||'My Store',
+      color:fbColor,
+      emoji:'🛒',
+      items,
+      createdAt:new Date().toISOString(),
+      updatedAt:new Date().toISOString(),
+      pinned:false
+    });
+  });
+
+  Promise.all(writes)
+    .then(()=>{
+      localStorage.removeItem('kob_gstores');
+      alert('✅ Done! '+stores.length+' store'+(stores.length!==1?'s are':' is')+' now synced across all devices.');
+      renderGrocery();
+    })
+    .catch(err=>{
+      console.error('Migration error:',err);
+      alert('Something went wrong uploading. Check your connection and try again.\n\nYour local data is safe — nothing was deleted.');
+    });
+}
+
 function renderGrocery(){
   const el=document.getElementById("g-body");if(!el)return;
+
+  // Show migration banner if this device has local-only stores
+  const migBanner=getMigrationBanner();
+
   const lists=Object.entries(groceryLists).sort((a,b)=>{
     const ap=(a[1].pinned?1:0),bp=(b[1].pinned?1:0);
     return bp-ap||(b[1].updatedAt||"").localeCompare(a[1].updatedAt||"");
   });
-  if(!lists.length){
+
+  if(!lists.length&&!migBanner){
     el.innerHTML=`
       <div class="empty" style="padding-top:60px">
         <div class="ei">🛒</div>
@@ -1355,7 +1263,11 @@ function renderGrocery(){
       </div>`;
     return;
   }
-  el.innerHTML=lists.map(([id,l])=>groceryStoreSection(id,l)).join("")+"<div style='height:80px'></div>";
+
+  el.innerHTML=
+    migBanner
+    +lists.map(([id,l])=>groceryStoreSection(id,l)).join("")
+    +"<div style='height:80px'></div>";
 }
 
 function groceryStoreSection(id,l){
@@ -1366,7 +1278,7 @@ function groceryStoreSection(id,l){
   const itemRows=items.map((item,idx)=>inlineItemHtml(item,idx,id,c)).join("");
   const doneBar=chk.length?`
     <div class="store-clear-row" style="background:${c.bg}">
-      <span style="font-size:12px;font-weight:700;color:${c.txt};opacity:.7">&#10003; ${chk.length} done</span>
+      <span style="font-size:12px;font-weight:700;color:${c.txt};opacity:.7">✓ ${chk.length} done</span>
       <button onclick="clearGChecked('${id}')" style="font-size:12px;font-weight:700;border:none;background:none;cursor:pointer;color:${c.txt};text-decoration:underline;opacity:.8">Clear done</button>
     </div>`:"";
   return `<div class="store-section">
@@ -1374,7 +1286,7 @@ function groceryStoreSection(id,l){
       <div class="store-title">${l.emoji||"🛒"} ${esc(l.name)}</div>
       <div style="display:flex;align-items:center;gap:8px">
         <span class="store-count">${unc.length} item${unc.length!==1?"s":""}</span>
-        <button onclick="closeModal();setTimeout(()=>openEditGListModal('${id}'),200)" style="padding:6px 12px;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.5);border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">✏️ Edit</button>
+        <button onclick="setTimeout(()=>openEditGListModal('${id}'),50)" style="padding:6px 12px;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.5);border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">✏️ Edit</button>
         <button class="store-menu-btn" onclick="openStoreMenu('${id}')" style="font-size:13px;letter-spacing:1px;font-weight:700">•••</button>
       </div>
     </div>
@@ -1395,14 +1307,14 @@ function inlineItemHtml(item,idx,id,c){
   return `<div class="store-item-row ${done?"done-row":""}">
     <button class="store-check-btn" onclick="togGItem('${id}',${idx})"
       style="border-color:${done?c.txt:"var(--bor)"};background:${done?c.txt:"none"}">
-      ${done?"&#10003;":""}
+      ${done?"✓":""}
     </button>
     <div style="flex:1;min-width:0">
       <span class="store-item-text ${done?"done":""}">${esc(item.name)}</span>
       ${item.source?`<div style="font-size:11px;color:var(--mut);margin-top:1px">from ${esc(item.source)}</div>`:""}
     </div>
     ${item.qty?`<span class="store-item-qty">${esc(item.qty)}</span>`:""}
-    <button class="store-del-btn" onclick="delGItem('${id}',${idx})">&#215;</button>
+    <button class="store-del-btn" onclick="delGItem('${id}',${idx})">×</button>
   </div>`;
 }
 
@@ -1418,24 +1330,21 @@ function doInlineAdd(id){
 
 function togGItem(id,idx){
   const l=groceryLists[id];if(!l)return;
-  db.ref("/grocery/lists/"+id+"/items").set((l.items||[]).map((item,i)=>i===idx?{...item,checked:!item.checked}:item));
+  const updated=(l.items||[]).map((item,i)=>i===idx?{...item,checked:!item.checked}:item);
+  db.ref("/grocery/lists/"+id+"/items").set(updated);
   db.ref("/grocery/lists/"+id+"/updatedAt").set(new Date().toISOString());
-  setTimeout(()=>renderGrocery(),150);
 }
 function delGItem(id,idx){
   const l=groceryLists[id];if(!l)return;
   db.ref("/grocery/lists/"+id+"/items").set((l.items||[]).filter((_,i)=>i!==idx));
   db.ref("/grocery/lists/"+id+"/updatedAt").set(new Date().toISOString());
-  setTimeout(()=>renderGrocery(),150);
 }
 function clearGChecked(id){
   const l=groceryLists[id];if(!l)return;
   db.ref("/grocery/lists/"+id+"/items").set((l.items||[]).filter(i=>!i.checked));
-  setTimeout(()=>renderGrocery(),200);
 }
 function toggleGPin(id){
   db.ref("/grocery/lists/"+id+"/pinned").set(!groceryLists[id]?.pinned);
-  setTimeout(()=>renderGrocery(),200);
 }
 function deleteGList(id){
   if(!confirm("Delete this store and all its items? Cannot be undone."))return;
@@ -1445,7 +1354,6 @@ function deleteGList(id){
 
 function openStoreMenu(id){
   const l=groceryLists[id];if(!l)return;
-  const c=GLIST_COLORS.find(x=>x.id===l.color)||GLIST_COLORS[3];
   document.getElementById("m-title").textContent=(l.emoji||"🛒")+" "+l.name;
   document.getElementById("m-body").innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
@@ -1482,7 +1390,7 @@ function openNewGListModal(){
 function openEditGListModal(id){
   const l=groceryLists[id];if(!l)return;
   newGColor=l.color||"red";newGEmoji=l.emoji||"🛒";
-  document.getElementById("m-title").textContent="&#9998; Edit Store";
+  document.getElementById("m-title").textContent="✏️ Edit Store";
   document.getElementById("m-body").innerHTML=
     `<div class="fg"><label class="fl">Store Name</label><input type="text" class="fi" id="el-name" value="${esc(l.name)}"></div>
     <div class="fg"><label class="fl">Icon</label><div style="display:flex;flex-wrap:wrap;gap:8px">${GLIST_EMOJIS.map(e=>`<span style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid ${e===newGEmoji?"var(--acc)":"transparent"};background:${e===newGEmoji?"var(--acc-lt)":"none"}" onclick="pickGEmoji(event,'${e}')">${e}</span>`).join("")}</div></div>
@@ -1525,7 +1433,7 @@ function doNewGList(){
   closeModal();
 }
 
-// Add to Shopping — store picker version
+// Add ingredients to shopping list from recipe detail
 function openAddToShop(id){
   addShopRid=id;
   const r=recipes[id];if(!r)return;
@@ -1546,7 +1454,7 @@ function openAddToShop(id){
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
       <span style="font-weight:700;color:var(--txt)">Servings:</span>
       <div class="sv-ctr">
-        <button class="sv-btn" onclick="adjAddServ(-1)">&#8722;</button>
+        <button class="sv-btn" onclick="adjAddServ(-1)">−</button>
         <span class="sv-num" id="add-sv" data-base="${base}">${base}</span>
         <button class="sv-btn" onclick="adjAddServ(1)">+</button>
       </div>
@@ -1560,6 +1468,18 @@ function openAddToShop(id){
     <div style="height:8px"></div>
   `;
   showModal();
+}
+function adjAddServ(delta){
+  const el=document.getElementById('add-sv');if(!el)return;
+  const base=parseInt(el.dataset.base)||4;
+  const nxt=Math.max(1,(parseInt(el.textContent)||base)+delta);
+  el.textContent=nxt;
+  const r=recipes[addShopRid];if(!r||!r.ingredients)return;
+  const factor=nxt/base;
+  document.getElementById('add-ing-prev').innerHTML=r.ingredients.map(i=>`
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bor);font-size:14px">
+      <span>${esc(i.name)}</span><span style="color:var(--mut)">${esc(scaleQ(i.qty,factor))}</span>
+    </div>`).join('');
 }
 function doAddToShopList(lid){
   const r=recipes[addShopRid];if(!r)return;
@@ -1591,7 +1511,7 @@ function doCopyFromList(tId,sId){
   const toAdd=(src.items||[]).filter(i=>!i.checked).map(i=>({...i,checked:false,source:src.name}));
   db.ref("/grocery/lists/"+tId+"/items").set([...(tgt.items||[]),...toAdd]);
   db.ref("/grocery/lists/"+tId+"/updatedAt").set(new Date().toISOString());
-  closeModal();setTimeout(()=>renderGrocery(),300);
+  closeModal();
 }
 
 function openAddFromRecipeToGList(id){
@@ -1613,9 +1533,9 @@ function pickRecipeForGList(listId,rid){
   const r=recipes[rid],l=groceryLists[listId];if(!r||!l)return;const base=r.servings||4;
   document.getElementById("m-title").textContent="🍽️ "+esc(r.name);
   document.getElementById("m-body").innerHTML=
-    `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="font-weight:700">Servings:</span><div class="sv-ctr"><button class="sv-btn" onclick="adjRGS(-1,'${rid}','${listId}',${base})">&#8722;</button><span class="sv-num" id="rgs-sv" data-base="${base}">${base}</span><button class="sv-btn" onclick="adjRGS(1,'${rid}','${listId}',${base})">+</button></div></div>
+    `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="font-weight:700">Servings:</span><div class="sv-ctr"><button class="sv-btn" onclick="adjRGS(-1,'${rid}','${listId}',${base})">−</button><span class="sv-num" id="rgs-sv" data-base="${base}">${base}</span><button class="sv-btn" onclick="adjRGS(1,'${rid}','${listId}',${base})">+</button></div></div>
     <div id="rgs-ings">${(r.ingredients||[]).map(i=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bor);font-size:14px"><span>${esc(i.name)}</span><span style="color:var(--mut)">${esc(i.qty||"")}</span></div>`).join("")}</div>
-    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-s" onclick="openAddFromRecipeToGList('${listId}')" style="flex:1">&#8592; Back</button><button class="btn btn-p" onclick="doAddRecipeToGList('${listId}','${rid}')" style="flex:1">Add All</button></div>`;
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-s" onclick="openAddFromRecipeToGList('${listId}')" style="flex:1">← Back</button><button class="btn btn-p" onclick="doAddRecipeToGList('${listId}','${rid}')" style="flex:1">Add All</button></div>`;
   showModal();
 }
 function adjRGS(delta,rid,listId,base){
@@ -1631,216 +1551,11 @@ function doAddRecipeToGList(listId,rid){
   const ni=(r.ingredients||[]).filter(i=>i.name).map(i=>({name:i.name,qty:scaleQ(i.qty,factor),checked:false,source:r.name}));
   db.ref("/grocery/lists/"+listId+"/items").set([...(l.items||[]),...ni]);
   db.ref("/grocery/lists/"+listId+"/updatedAt").set(new Date().toISOString());
-  closeModal();setTimeout(()=>renderGrocery(),300);
-}
-
-// ============================================================
-// GROCERY TAB (view-todos) — localStorage-backed store/item lists
-// ============================================================
-function loadGStores(){try{return JSON.parse(localStorage.getItem('kob_gstores')||'[]');}catch{return[];}}
-function saveGStores(s){localStorage.setItem('kob_gstores',JSON.stringify(s));}
-
-function renderTodos(){
-  const el=document.getElementById('t-body');if(!el)return;
-  const stores=loadGStores();
-  if(!stores.length){
-    el.innerHTML=`
-      <div class="empty" style="padding-top:60px">
-        <div class="ei">🛒</div>
-        <p style="font-size:16px;font-weight:700;color:var(--pri);margin-bottom:8px">No stores yet</p>
-        <p style="font-size:14px;line-height:1.6">Tap <strong style="background:var(--acc);color:#fff;padding:1px 8px;border-radius:6px">+</strong> to add your first store</p>
-      </div>`;
-    return;
-  }
-  el.innerHTML=stores.map(store=>gStoreSectionHtml(store)).join('')+'<div style="height:100px"></div>';
-}
-
-function gStoreSectionHtml(store){
-  const c=TODO_COLORS.find(x=>x.id===store.color)||TODO_COLORS[0];
-  const items=store.items||[];
-  const itemsHtml=items.map((item,idx)=>gItemHtml(store.id,item,idx,c)).join('');
-  return `
-    <div style="margin:0 0 28px">
-      <div style="display:flex;align-items:center;gap:0;border-left:5px solid ${c.txt};margin:0 16px;padding:10px 12px 10px 14px;background:var(--sur);border-radius:0 12px 0 0;box-shadow:0 2px 6px rgba(0,0,0,.06)">
-        <div style="flex:1;min-width:0">
-          <div id="store-name-display-${store.id}" style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--pri);cursor:pointer;line-height:1.2" onclick="startEditStoreName('${store.id}')">${esc(store.name)}</div>
-          <div id="store-name-edit-${store.id}" style="display:none">
-            <input type="text" value="${esc(store.name)}" id="store-name-in-${store.id}"
-              style="width:100%;padding:6px 10px;border:1.5px solid var(--acc);border-radius:8px;font-size:16px;font-weight:700;font-family:'Playfair Display',serif;color:var(--pri);background:var(--bg)"
-              onblur="saveStoreName('${store.id}')" onkeydown="if(event.key==='Enter')saveStoreName('${store.id}');if(event.key==='Escape')cancelEditStoreName('${store.id}')">
-          </div>
-        </div>
-        <button onclick="deleteGStore('${store.id}')" title="Delete store"
-          style="width:32px;height:32px;border-radius:50%;border:none;background:none;font-size:18px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.6">🗑️</button>
-      </div>
-      <div style="margin:0 16px;background:var(--sur);border-left:5px solid ${c.txt};border-radius:0 0 12px 0">
-        ${itemsHtml}
-        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--bor)">
-          <input type="text" id="qadd-g-${store.id}" placeholder="Add item..."
-            style="flex:1;padding:9px 12px;border:1.5px solid var(--bor);border-radius:8px;font-size:15px;background:var(--bg);color:var(--txt)"
-            onkeydown="if(event.key==='Enter')doAddGStoreItem('${store.id}')">
-          <button onclick="doAddGStoreItem('${store.id}')"
-            style="padding:9px 16px;background:${c.txt};color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0">+</button>
-        </div>
-      </div>
-    </div>`;
-}
-
-function gItemHtml(storeId,item,idx,c){
-  return `<div style="display:flex;align-items:center;gap:10px;padding:11px 14px 11px 20px;border-top:1px solid var(--bor);background:${item.checked?'var(--bg)':'var(--sur)'}">
-    <button onclick="togGStoreItem('${storeId}',${idx})"
-      style="width:22px;height:22px;border-radius:5px;border:2px solid ${item.checked?c.txt:'var(--bor)'};background:${item.checked?c.txt:'none'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;transition:all .15s">
-      ${item.checked?'✓':''}
-    </button>
-    <div id="item-display-${storeId}-${idx}" style="flex:1;min-width:0;cursor:pointer" onclick="startEditItemName('${storeId}',${idx})">
-      <span style="font-size:15px;font-weight:${item.checked?'400':'600'};color:${item.checked?'var(--mut)':'var(--txt)'};${item.checked?'text-decoration:line-through;':''}line-height:1.3">${esc(item.name)}</span>
-    </div>
-    <div id="item-edit-${storeId}-${idx}" style="display:none;flex:1;min-width:0">
-      <input type="text" value="${esc(item.name)}" id="item-in-${storeId}-${idx}"
-        style="width:100%;padding:5px 8px;border:1.5px solid var(--acc);border-radius:6px;font-size:15px;font-weight:600;color:var(--txt);background:var(--bg)"
-        onblur="saveItemName('${storeId}',${idx})" onkeydown="if(event.key==='Enter')saveItemName('${storeId}',${idx});if(event.key==='Escape')cancelEditItemName('${storeId}',${idx})">
-    </div>
-    <button onclick="delGStoreItem('${storeId}',${idx})"
-      style="width:28px;height:28px;border-radius:50%;border:none;background:none;font-size:16px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.5">🗑️</button>
-  </div>`;
-}
-
-function startEditStoreName(id){
-  document.getElementById('store-name-display-'+id).style.display='none';
-  const editEl=document.getElementById('store-name-edit-'+id);
-  editEl.style.display='block';
-  setTimeout(()=>document.getElementById('store-name-in-'+id)?.focus(),20);
-}
-function cancelEditStoreName(id){
-  document.getElementById('store-name-edit-'+id).style.display='none';
-  document.getElementById('store-name-display-'+id).style.display='';
-}
-function saveStoreName(id){
-  const val=document.getElementById('store-name-in-'+id)?.value.trim();
-  if(!val){cancelEditStoreName(id);return;}
-  const stores=loadGStores();
-  const s=stores.find(x=>x.id===id);if(!s)return;
-  s.name=val;saveGStores(stores);renderTodos();
-}
-
-function startEditItemName(storeId,idx){
-  document.getElementById(`item-display-${storeId}-${idx}`).style.display='none';
-  const editEl=document.getElementById(`item-edit-${storeId}-${idx}`);
-  editEl.style.display='flex';
-  setTimeout(()=>document.getElementById(`item-in-${storeId}-${idx}`)?.focus(),20);
-}
-function cancelEditItemName(storeId,idx){
-  document.getElementById(`item-edit-${storeId}-${idx}`).style.display='none';
-  document.getElementById(`item-display-${storeId}-${idx}`).style.display='';
-}
-function saveItemName(storeId,idx){
-  const val=document.getElementById(`item-in-${storeId}-${idx}`)?.value.trim();
-  if(!val){cancelEditItemName(storeId,idx);return;}
-  const stores=loadGStores();
-  const s=stores.find(x=>x.id===storeId);if(!s)return;
-  if(!s.items[idx])return;
-  s.items[idx].name=val;saveGStores(stores);renderTodos();
-}
-
-function doAddGStoreItem(storeId){
-  const el=document.getElementById('qadd-g-'+storeId);
-  const name=el?el.value.trim():'';if(!name)return;
-  const stores=loadGStores();
-  const s=stores.find(x=>x.id===storeId);if(!s)return;
-  if(!s.items)s.items=[];
-  s.items.push({name,checked:false});
-  saveGStores(stores);
-  if(el)el.value='';
-  renderTodos();
-  setTimeout(()=>document.getElementById('qadd-g-'+storeId)?.focus(),80);
-}
-
-function togGStoreItem(storeId,idx){
-  const stores=loadGStores();
-  const s=stores.find(x=>x.id===storeId);if(!s||!s.items[idx])return;
-  s.items[idx].checked=!s.items[idx].checked;
-  saveGStores(stores);renderTodos();
-}
-
-function delGStoreItem(storeId,idx){
-  const stores=loadGStores();
-  const s=stores.find(x=>x.id===storeId);if(!s)return;
-  s.items=s.items.filter((_,i)=>i!==idx);
-  saveGStores(stores);renderTodos();
-}
-
-function deleteGStore(id){
-  const stores=loadGStores();
-  const s=stores.find(x=>x.id===id);
-  if(!confirm('Delete "'+( s?s.name:'this store')+'" and all its items?'))return;
-  saveGStores(stores.filter(x=>x.id!==id));renderTodos();
-}
-
-function openNewTodoModal(){
-  newTodoColor='pink';
-  document.getElementById('m-title').textContent='🛒 New Store';
-  document.getElementById('m-body').innerHTML=`
-    <div class="fg">
-      <label class="fl">Store Name</label>
-      <input type="text" class="fi" id="todo-name-in" placeholder="e.g. Target, Sprouts, Costco...">
-    </div>
-    <div class="fg">
-      <label class="fl">Color</label>
-      <div class="color-pick" id="gtcolor-pick">
-        ${TODO_COLORS.map(c=>`<div class="color-dot ${newTodoColor===c.id?'sel':''}" style="background:${c.bg};border-color:${c.txt}" onclick="setTodoColor('${c.id}')" id="cdot_${c.id}"></div>`).join('')}
-      </div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
-      <button class="btn btn-p" onclick="doNewTodo()" style="flex:1">Create Store</button>
-    </div>
-  `;
-  showModal();
-  setTimeout(()=>document.getElementById('todo-name-in')?.focus(),300);
-}
-
-function setTodoColor(id){
-  newTodoColor=id;
-  document.querySelectorAll('#gtcolor-pick .color-dot').forEach(d=>d.classList.remove('sel'));
-  const el=document.getElementById('cdot_'+id);if(el)el.classList.add('sel');
-}
-
-function doNewTodo(){
-  const name=document.getElementById('todo-name-in').value.trim();
-  if(!name){alert('Enter a store name.');return;}
-  const stores=loadGStores();
-  stores.push({id:'gs_'+Date.now(),name,color:newTodoColor,items:[]});
-  saveGStores(stores);
   closeModal();
-  renderTodos();
 }
 
-// stubs kept for compatibility — these functions are no longer called in this tab
-function deleteTodoList(id){}
-function selectStore(tid){}
-function openEditTodoList(id){}
-function doEditTodoList(id){}
-function combinedItemHtml(){}
-function doAddCombinedItem(){}
-function togCombinedItem(){}
-function delCombinedItem(){}
-function clearCombinedDone(){}
-function openTodo(id){}
-function todoItemHtml(){}
-function doAddTodoItem(){}
-function togTodoItem(){}
-function delTodoItem(){}
-function clearTodoDone(){}
-
-// deleteTodo stub
-function deleteTodo(){}
-
-
-
-
-
 // ============================================================
-// LIST TAB — localStorage lists with color-coded items
+// LIST TAB — color-coded personal lists (localStorage)
 // ============================================================
 function loadLLists(){try{return JSON.parse(localStorage.getItem('kob_lists')||'[]');}catch{return[];}}
 function saveLLists(lists){localStorage.setItem('kob_lists',JSON.stringify(lists));}
@@ -1869,8 +1584,8 @@ function renderListIndex(){
         const c=TODO_COLORS.find(x=>x.id===list.color)||TODO_COLORS[0];
         const cnt=(list.items||[]).length;
         return `<div onclick="openListDetail('${list.id}')"
-          style="display:flex;align-items:center;gap:14px;padding:16px;margin-bottom:10px;background:var(--sur);border-radius:16px;box-shadow:0 2px 8px rgba(140,34,82,.08);cursor:pointer;border:1.5px solid ${c.bg};transition:transform .15s" ontouchstart="" onmousedown="this.style.transform='scale(.98)'" onmouseup="this.style.transform=''" ontouchend="this.style.transform=''">
-          <div style="width:14px;height:14px;border-radius:50%;background:${c.txt};flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.2)"></div>
+          style="display:flex;align-items:center;gap:14px;padding:16px;margin-bottom:10px;background:var(--sur);border-radius:16px;box-shadow:0 2px 8px rgba(140,34,82,.08);cursor:pointer;border:1.5px solid ${c.bg}">
+          <div style="width:14px;height:14px;border-radius:50%;background:${c.txt};flex-shrink:0"></div>
           <div style="flex:1;min-width:0">
             <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--pri);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(list.name)}</div>
             <div style="font-size:12px;color:var(--mut);margin-top:2px">${cnt} item${cnt!==1?'s':''}</div>
@@ -1907,9 +1622,9 @@ function renderListDetail(id){
 function renderListInner(list,c){
   const items=list.items||[];
   document.getElementById('list-inner').innerHTML=`
-    <div style="padding:12px 16px 12px;background:${c.bg};border-bottom:1.5px solid rgba(0,0,0,.07)">
+    <div style="padding:12px 16px;background:${c.bg};border-bottom:1.5px solid rgba(0,0,0,.07)">
       <button onclick="openNewListItemForm()"
-        style="width:100%;padding:13px;background:${c.txt};color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.2px">+ Add Item</button>
+        style="width:100%;padding:13px;background:${c.txt};color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">+ Add Item</button>
     </div>
     <div style="padding:0 16px">
       ${!items.length
@@ -1917,10 +1632,10 @@ function renderListInner(list,c){
         :items.map(item=>{
           const ic=TODO_COLORS.find(x=>x.id===item.color)||TODO_COLORS[0];
           return `<div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--bor)">
-            <div style="width:12px;height:12px;border-radius:50%;background:${ic.txt};flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.15)"></div>
-            <span style="flex:1;font-size:16px;font-weight:600;color:var(--txt);line-height:1.3">${esc(item.text)}</span>
+            <div style="width:12px;height:12px;border-radius:50%;background:${ic.txt};flex-shrink:0"></div>
+            <span style="flex:1;font-size:16px;font-weight:600;color:var(--txt)">${esc(item.text)}</span>
             <button onclick="deleteListItem('${list.id}','${item.id}')"
-              style="width:34px;height:34px;border-radius:50%;border:none;background:rgba(0,0,0,.06);font-size:16px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+              style="width:34px;height:34px;border-radius:50%;border:none;background:rgba(0,0,0,.06);font-size:16px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
           </div>`;
         }).join('')
       }
@@ -2044,7 +1759,7 @@ function openEditScheduleModal(){
 function renderScheduleModal(){
   const sorted=[...SD].sort((a,b)=>a.offset-b.offset);
   document.getElementById('m-body').innerHTML=`
-    <p style="font-size:13px;color:var(--mut);margin-bottom:14px">Build your custom bake schedule. "0" = bake day, negative numbers = days before.</p>
+    <p style="font-size:13px;color:var(--mut);margin-bottom:14px">Build your custom bake schedule. "0" = bake day, negative = days before.</p>
     <div id="sched-list">
       ${sorted.map((step,idx)=>`
         <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--bor)">
@@ -2055,8 +1770,7 @@ function renderScheduleModal(){
           </div>
           <button onclick="editScheduleStep(${idx})" style="background:none;border:none;font-size:16px;cursor:pointer;padding:4px">✏️</button>
           <button onclick="deleteScheduleStep(${idx})" style="background:none;border:none;font-size:16px;cursor:pointer;padding:4px;color:var(--err)">🗑️</button>
-        </div>
-      `).join('')}
+        </div>`).join('')}
     </div>
     <button class="btn btn-s btn-full" onclick="addScheduleStep()" style="margin-top:12px">+ Add Step</button>
     <button class="btn btn-s btn-full" onclick="resetSchedule()" style="margin-top:8px">↩️ Reset to Default</button>
@@ -2068,7 +1782,6 @@ function renderScheduleModal(){
 function editScheduleStep(idx){
   const sorted=[...SD].sort((a,b)=>a.offset-b.offset);
   const step=sorted[idx];
-  // Find real index in SD
   const realIdx=SD.findIndex(s=>s.offset===step.offset&&s.label===step.label);
   document.getElementById('m-title').textContent='✏️ Edit Step';
   document.getElementById('m-body').innerHTML=`
@@ -2079,14 +1792,8 @@ function editScheduleStep(idx){
       </div>
       <input type="text" class="fi" id="step-emoji-val" value="${step.emoji}" placeholder="Or type emoji" style="margin-top:4px">
     </div>
-    <div class="fg">
-      <label class="fl">Step Name</label>
-      <input type="text" class="fi" id="step-label" value="${esc(step.label)}" placeholder="e.g. Feed Starter">
-    </div>
-    <div class="fg">
-      <label class="fl">Days (0 = bake day, -1 = day before, -3 = 3 days before)</label>
-      <input type="number" class="fi" id="step-offset" value="${step.offset}" max="0" min="-14">
-    </div>
+    <div class="fg"><label class="fl">Step Name</label><input type="text" class="fi" id="step-label" value="${esc(step.label)}"></div>
+    <div class="fg"><label class="fl">Days (0 = bake day, -1 = day before)</label><input type="number" class="fi" id="step-offset" value="${step.offset}" max="0" min="-14"></div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-s" onclick="openEditScheduleModal()" style="flex:1">← Back</button>
       <button class="btn btn-p" onclick="saveScheduleStep(${realIdx})" style="flex:1">Save Step</button>
@@ -2121,14 +1828,8 @@ function addScheduleStep(){
       </div>
       <input type="text" class="fi" id="step-emoji-val" value="${SCHEDULE_EMOJIS[0]}" placeholder="Or type emoji" style="margin-top:4px">
     </div>
-    <div class="fg">
-      <label class="fl">Step Name</label>
-      <input type="text" class="fi" id="step-label" placeholder="e.g. Second Feed">
-    </div>
-    <div class="fg">
-      <label class="fl">Days (0 = bake day, -1 = day before)</label>
-      <input type="number" class="fi" id="step-offset" value="-1" max="0" min="-14">
-    </div>
+    <div class="fg"><label class="fl">Step Name</label><input type="text" class="fi" id="step-label" placeholder="e.g. Second Feed"></div>
+    <div class="fg"><label class="fl">Days (0 = bake day, -1 = day before)</label><input type="number" class="fi" id="step-offset" value="-1" max="0" min="-14"></div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-s" onclick="openEditScheduleModal()" style="flex:1">← Back</button>
       <button class="btn btn-p" onclick="doAddScheduleStep()" style="flex:1">Add Step</button>
@@ -2156,7 +1857,7 @@ function deleteScheduleStep(idx){
 }
 
 function resetSchedule(){
-  if(!confirm('Reset to default schedule?\nFeed Starter → Mix Dough → Shape → Bake'))return;
+  if(!confirm('Reset to default schedule?'))return;
   db.ref('/starter/schedule').set(SD_DEFAULT);
 }
 
@@ -2187,7 +1888,7 @@ function renderStarter(){
         <button class="lbtn ${starterD.location==='fridge'?'active':''}" onclick="setLoc('fridge')">🧊 Fridge</button>
       </div>
       <div style="padding:10px 14px 0">
-        <input type="text" placeholder="🌡️ Temperature note (e.g. kitchen is warm today)..." value="${esc(starterD.tempNote||'')}" onchange="saveTempNote(this.value)"
+        <input type="text" placeholder="🌡️ Temperature note..." value="${esc(starterD.tempNote||'')}" onchange="saveTempNote(this.value)"
           style="width:100%;padding:9px 12px;border:1.5px solid var(--bor);border-radius:8px;font-size:14px;background:var(--sur);color:var(--txt)">
       </div>
       <div class="sc-acts">
@@ -2234,9 +1935,7 @@ function confBakeDay(){
   const el=document.getElementById('bd-in');
   const v=el?el.value:'';
   if(!v){alert('Please select a bake day.');return;}
-  // Save bake day to starter
   db.ref('/starter').update({bakeDay:v});
-  // Write each prep step to calendar
   const bd=new Date(v+'T12:00:00');
   const writes=[];
   SD.forEach(s=>{
@@ -2245,12 +1944,9 @@ function confBakeDay(){
     writes.push(db.ref('/calendar/'+ds+'/sourdough').set({emoji:s.emoji,label:s.label}));
   });
   Promise.all(writes).then(()=>{
-    alert('Bake schedule set! \n\nCheck your calendar — prep steps have been added to each day.');
+    alert('Bake schedule set! Check your calendar — prep steps have been added to each day.');
     if(curView==='calendar'){calDayDetail=null;renderCalendar();}
     if(curView==='dashboard')renderDash();
-  }).catch(err=>{
-    console.error('Bake schedule error:',err);
-    alert('Error saving schedule. Please check your connection.');
   });
 }
 function clrBakeDay(){
@@ -2310,10 +2006,8 @@ function doLogBake(){
 }
 
 // ============================================================
-// MODAL
+// MODAL & OVERLAYS
 // ============================================================
-
-// Full-screen list view (for grocery and todo lists)
 function showListView(){
   document.getElementById('list-ov').classList.add('open');
   document.body.style.overflow='hidden';
@@ -2321,9 +2015,8 @@ function showListView(){
 function closeListView(){
   document.getElementById('list-ov').classList.remove('open');
   document.body.style.overflow='';
-  const wasListOpen=!!activeListId;
-  activeGListId=null;activeTodoId=null;activeListId=null;
-  if(wasListOpen&&curView==='list')renderListIndex();
+  activeListId=null;
+  if(curView==='list')renderListIndex();
 }
 
 function showModal(){document.getElementById('m-ov').classList.add('open');document.body.style.overflow='hidden';}
