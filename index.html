@@ -575,6 +575,7 @@ function renderDash(){
       <div style="flex:1;min-width:0">
         ${sde?`<div style="font-size:12px;color:#8B4513;font-weight:700;padding:2px 0">${sde.emoji} ${sde.label}</div>`:''}
         ${mealsHtml||(!sde?`<div style="font-size:13px;color:var(--bor);font-style:italic">—</div>`:'')}
+        ${day.note?`<div onclick="openDayNoteModal('${ds}')" style="font-size:11px;color:var(--mut);font-style:italic;margin-top:2px;cursor:pointer">📝 ${esc(day.note)}</div>`:''}
       </div>
       <button class="wk-add" onclick="quickAddMeal('${ds}')" title="Add meal">+</button>
     </div>`;
@@ -597,16 +598,6 @@ function renderDash(){
         ${dinnerV.id?`<button class="t-btn t-btn-o" onclick="openRecipeDetail('${dinnerV.id}')">📖 Recipe</button>`:''}
       </div>
     </div>`:''}
-    <div class="shop-card" onclick="nav('grocery')">
-      <div class="shop-card-left">
-        <div class="shop-card-icon">🛍️</div>
-        <div>
-          <div class="shop-card-title">Shopping Lists</div>
-          <div class="shop-card-sub">${shopSub}</div>
-        </div>
-      </div>
-      <span style="font-size:22px;color:var(--acc)">›</span>
-    </div>
     ${ss?`<div style="margin:10px 16px 0;padding:12px 14px;background:var(--sur);border-radius:14px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(140,34,82,.08)">
       <span style="font-size:14px;font-weight:700;color:var(--pri)">🌱 Starter: ${ss.emoji} ${ss.label}</span>
       <button onclick="openStarter()" style="border:none;background:none;font-size:13px;font-weight:700;color:var(--acc);cursor:pointer">Manage →</button>
@@ -628,9 +619,36 @@ function quickAddMeal(ds){
     <div class="slot-pick-grid">
       ${SLOTS.map(s=>`<button class="slot-pick-btn" onclick="openSlotPicker('${ds}','${s.id}')">${s.label}</button>`).join('')}
     </div>
+    <button class="slot-pick-btn" onclick="openDayNoteModal('${ds}')" style="margin-top:8px;width:100%;grid-column:span 2">📝 Add Note</button>
     <div style="height:8px"></div>
   `;
   showModal();
+}
+
+function openDayNoteModal(ds){
+  const day=calD[ds]||{};
+  const d=new Date(ds+'T12:00:00');
+  document.getElementById('m-title').textContent='📝 '+d.toLocaleDateString('en',{weekday:'long',month:'short',day:'numeric'});
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg">
+      <label class="fl">Day Note</label>
+      <textarea class="fta" id="day-note-in" placeholder="e.g. Family dinner, date night, meal prep day...">${esc(day.note||'')}</textarea>
+    </div>
+    ${day.note?`<button class="btn btn-d btn-full" onclick="saveDNote('${ds}',null);closeModal()" style="margin-bottom:10px">🗑️ Remove Note</button>`:''}
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" onclick="saveDayNote('${ds}')" style="flex:1">Save Note</button>
+    </div>
+    <div style="height:8px"></div>
+  `;
+  showModal();
+  setTimeout(()=>document.getElementById('day-note-in')?.focus(),300);
+}
+
+function saveDayNote(ds){
+  const val=document.getElementById('day-note-in')?.value.trim()||'';
+  saveDNote(ds,val||null);
+  closeModal();
 }
 
 // ============================================================
