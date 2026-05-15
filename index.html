@@ -11,6 +11,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -283,6 +284,11 @@
     .migrate-banner-btn:active{opacity:.85;}
     #view-calendar.active{display:flex!important;flex-direction:column;height:100%;overflow:hidden;}
     #c-body{flex:1;display:flex;flex-direction:column;min-height:0;}
+    .timer-btn-run{background:rgba(107,158,112,.35)!important;border-color:var(--ok)!important;font-size:11px!important;font-weight:700!important;letter-spacing:.3px;font-variant-numeric:tabular-nums;}
+    .timer-btn-warn{background:rgba(196,146,58,.35)!important;border-color:var(--warn)!important;}
+    .timer-btn-alert{background:rgba(192,64,64,.4)!important;border-color:var(--err)!important;animation:pls .6s infinite;}
+    .timer-preset{padding:10px;border-radius:10px;border:1.5px solid var(--bor);background:var(--sur);font-size:14px;font-weight:700;color:var(--txt);cursor:pointer;text-align:center;}
+    .timer-preset.active{background:var(--acc);color:#fff;border-color:var(--acc);}
   </style>
 </head>
 <body>
@@ -291,6 +297,7 @@
     <span class="hdr-title">🍞 Keep On Baking</span>
     <div class="hdr-right">
       <span class="sync-badge"><span class="sync-dot pend" id="sdot"></span><span id="stxt">Connecting</span></span>
+      <button class="starter-btn" id="timer-btn" onclick="timerBtnTap()" title="Kitchen Timer">⏱️</button>
       <button class="starter-btn" onclick="openStarter()">🌱</button>
     </div>
   </div>
@@ -422,7 +429,9 @@ const GLIST_COLORS=[
 ];
 const GLIST_EMOJIS=['🛒','🏪','🏬','🥦','🥩','🍞','💊','🐾','🏠','🌿','🍷','🎂'];
 let newGColor='red',newGEmoji='🛒';
-let recipes={},calD={},ideas={},groceryLists={};
+let authUser=null;
+let timerLabel='',timerEndMs=0,timerInterval=null,timerTotalMs=0,timerPresetMins=0;
+let recipes={},calD={},ideas={},groceryLists={},listsD={};
 let starterD={lastFed:null,location:'counter',tempNote:'',bakeDay:null};
 let bakeLog={},shopItems=[],shopStaples=[];
 let curView='dashboard',wkOff=0,rFilt='all',rTab='recipes',shopTab='list',calDayDetail=null;
@@ -470,6 +479,10 @@ function initFB(){
   });
   db.ref('/todos').on('value',s=>{
     todos=s.val()||{};
+  });
+  db.ref('/lists').on('value',s=>{
+    listsD=s.val()||{};
+    if(curView==='list')renderList();
   });
 }
 function setSS(s,t){
@@ -766,6 +779,15 @@ function openRecipeDetail(id){
         <button class="btn btn-p" onclick="openAddToCal('${id}')" style="flex:1">🗓️ Add to Calendar</button>
       </div>
     `:`<button class="btn btn-p btn-full" style="margin-bottom:14px" onclick="openAddToCal('${id}')">🗓️ Add to Calendar</button>`}
+    ${r.steps&&r.steps.length?`
+      <span class="sub-h">Steps</span>
+      <ol style="list-style:none;padding:0;margin-bottom:16px" id="det-steps">
+        ${r.steps.map((s,i)=>`<li class="det-step" onclick="togStep(this)" data-done="0" style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--bor);cursor:pointer">
+          <span class="step-num" data-num="${i+1}" style="min-width:26px;height:26px;border-radius:50%;background:var(--bor);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--mut);flex-shrink:0">${i+1}</span>
+          <span class="step-text" style="flex:1;font-size:15px;line-height:1.5;padding-top:3px">${esc(s)}</span>
+        </li>`).join('')}
+      </ol>
+    `:''}
     ${r.notes?`<span class="sub-h">Notes</span><p style="font-size:15px;line-height:1.6;white-space:pre-wrap;color:var(--txt)">${esc(r.notes)}</p>`:''}
     <div style="height:8px"></div>
   `;
@@ -865,7 +887,12 @@ function openRecipeForm(id){
       <div id="ilist"></div>
       <button class="btn btn-s btn-sm" onclick="addIR()" style="margin-top:6px">+ Add Ingredient</button>
     </div>
-    <div class="fg"><label class="fl">Notes / Instructions</label><textarea class="fta" id="rnotes" placeholder="Steps, tips, temperature, timing...">${r?esc(r.notes||''):''}</textarea></div>
+    <div class="fg">
+      <label class="fl">Steps</label>
+      <div id="slist"></div>
+      <button class="btn btn-s btn-sm" onclick="addStep()" style="margin-top:6px">+ Add Step</button>
+    </div>
+    <div class="fg"><label class="fl">Notes</label><textarea class="fta" id="rnotes" placeholder="Tips, temperature, timing...">${r?esc(r.notes||''):''}</textarea></div>
     <div class="fg" style="display:flex;align-items:center;gap:10px">
       <input type="checkbox" id="rrot" ${r&&r.regularRotation?'checked':''} style="width:20px;height:20px;accent-color:var(--acc)">
       <label for="rrot" style="font-size:14px;font-weight:700;color:var(--txt);cursor:pointer">⭐ Regular rotation</label>
@@ -882,6 +909,8 @@ function openRecipeForm(id){
   const ings=r&&r.ingredients?r.ingredients:[];
   ings.forEach(i=>addIR(i.qty,i.name));
   if(!ings.length)addIR('','');
+  const steps=r&&r.steps?r.steps:[];
+  steps.forEach(s=>addStep(s));
   showModal();
 }
 
@@ -929,6 +958,11 @@ async function saveRF(){
     const n=row.querySelector('.in').value.trim();
     if(n)ingredients.push({qty:q,name:n});
   });
+  const steps=[];
+  document.querySelectorAll('#slist .step-row').forEach(row=>{
+    const v=row.querySelector('.step-in').value.trim();
+    if(v)steps.push(v);
+  });
   const rid=editingRid||('r_'+Date.now());
   let photoURL=(editingRid&&recipes[editingRid]?.photoURL)||null;
   if(pendingPhoto){
@@ -943,7 +977,7 @@ async function saveRF(){
     }catch(err){console.error(err);alert('Photo upload failed — saved without photo.');}
     pendingPhoto=null;
   }
-  const data={name,category:rFormCat,notes,ingredients,servings:rFormServ,regularRotation:rot,bakeryMode,favorite:!!(editingRid&&recipes[editingRid]?.favorite),photoURL:photoURL||null,updatedAt:new Date().toISOString()};
+  const data={name,category:rFormCat,notes,steps,ingredients,servings:rFormServ,regularRotation:rot,bakeryMode,favorite:!!(editingRid&&recipes[editingRid]?.favorite),photoURL:photoURL||null,updatedAt:new Date().toISOString()};
   if(!editingRid)data.createdAt=new Date().toISOString();
   await db.ref('/recipes/'+rid).update(data);
   closeModal();
@@ -951,6 +985,32 @@ async function saveRF(){
 function confirmDel(id){
   if(!confirm('Delete "'+( recipes[id]?.name||'this recipe')+'"?\nCannot be undone.'))return;
   db.ref('/recipes/'+id).remove();closeModal();
+}
+function addStep(text=''){
+  const list=document.getElementById('slist');if(!list)return;
+  const idx=list.children.length+1;
+  const row=document.createElement('div');
+  row.className='ir step-row';
+  row.innerHTML=`<span class="step-num-lbl" style="width:22px;font-size:13px;font-weight:700;color:var(--mut);flex-shrink:0;text-align:center">${idx}</span>
+    <input type="text" class="step-in" placeholder="Step ${idx}…" value="${esc(text)}" style="flex:1;padding:10px;border:1.5px solid var(--bor);border-radius:8px;font-size:14px;background:var(--sur);color:var(--txt)">
+    <button class="del-ir" onclick="this.parentElement.remove();renumSteps()">×</button>`;
+  list.appendChild(row);
+}
+function renumSteps(){
+  document.querySelectorAll('#slist .step-row').forEach((row,i)=>{
+    const lbl=row.querySelector('.step-num-lbl');
+    const inp=row.querySelector('.step-in');
+    if(lbl)lbl.textContent=i+1;
+    if(inp)inp.placeholder='Step '+(i+1)+'…';
+  });
+}
+function togStep(el){
+  const done=el.dataset.done==='1';
+  el.dataset.done=done?'0':'1';
+  const circle=el.querySelector('.step-num');
+  const text=el.querySelector('.step-text');
+  if(circle){circle.style.background=done?'var(--bor)':'var(--ok)';circle.style.color=done?'var(--mut)':'#fff';circle.textContent=done?circle.dataset.num:'✓';}
+  if(text){text.style.textDecoration=done?'none':'line-through';text.style.color=done?'var(--txt)':'var(--mut)';}
 }
 
 // ============================================================
@@ -1062,6 +1122,7 @@ function renderCalendar(){
       <div style="font-size:12px;font-weight:700;color:${isToday?'#fff':'var(--pri)'};margin-bottom:3px">${d}</div>
       ${hasBake?`<div style="font-size:9px;background:${isToday?'rgba(255,255,255,.3)':'#FFF3E8'};color:${isToday?'#fff':'#8B4513'};padding:1px 3px;border-radius:3px;margin-bottom:1px">${day.sourdough.emoji}</div>`:''}
       ${SLOTS.filter(s=>day[s.id]).slice(0,2).map(s=>{const m=getMealDisplay(day[s.id]);return m?`<div style="font-size:9px;color:${isToday?'#fff':'var(--acc)'};font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name.split(' ')[0]}</div>`:''}).join('')}
+      ${day.note?`<div style="font-size:8px;color:${isToday?'rgba(255,255,255,.8)':'var(--mut)'};margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic">${esc(day.note)}</div>`:''}
     </div>`;
   }
 
@@ -1334,6 +1395,7 @@ function inlineItemHtml(item,idx,id,c){
       ${item.source?`<div style="font-size:11px;color:var(--mut);margin-top:1px">from ${esc(item.source)}</div>`:""}
     </div>
     ${item.qty?`<span class="store-item-qty">${esc(item.qty)}</span>`:""}
+    <button class="store-del-btn" onclick="openEditGItem('${id}',${idx})" title="Edit" style="font-size:13px">✏️</button>
     <button class="store-del-btn" onclick="delGItem('${id}',${idx})">×</button>
   </div>`;
 }
@@ -1358,6 +1420,32 @@ function delGItem(id,idx){
   const l=groceryLists[id];if(!l)return;
   db.ref("/grocery/lists/"+id+"/items").set((l.items||[]).filter((_,i)=>i!==idx));
   db.ref("/grocery/lists/"+id+"/updatedAt").set(new Date().toISOString());
+}
+function openEditGItem(id,idx){
+  const l=groceryLists[id];if(!l)return;
+  const item=(l.items||[])[idx];if(!item)return;
+  document.getElementById('m-title').textContent='✏️ Edit Item';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg"><label class="fl">Item Name</label><input type="text" class="fi" id="ei-name" value="${esc(item.name)}"></div>
+    <div class="fg"><label class="fl">Quantity (optional)</label><input type="text" class="fi" id="ei-qty" placeholder="e.g. 2 lbs, 1 can…" value="${esc(item.qty||'')}"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" onclick="doEditGItem('${id}',${idx})" style="flex:1">Save</button>
+    </div>
+    <div style="height:8px"></div>
+  `;
+  showModal();
+  setTimeout(()=>document.getElementById('ei-name')?.focus(),300);
+}
+function doEditGItem(id,idx){
+  const name=document.getElementById('ei-name')?.value.trim();
+  if(!name){alert('Enter an item name.');return;}
+  const qty=document.getElementById('ei-qty')?.value.trim()||'';
+  const l=groceryLists[id];if(!l)return;
+  const updated=(l.items||[]).map((item,i)=>i===idx?{...item,name,qty}:item);
+  db.ref('/grocery/lists/'+id+'/items').set(updated);
+  db.ref('/grocery/lists/'+id+'/updatedAt').set(new Date().toISOString());
+  closeModal();
 }
 function clearGChecked(id){
   const l=groceryLists[id];if(!l)return;
@@ -1575,11 +1663,8 @@ function doAddRecipeToGList(listId,rid){
 }
 
 // ============================================================
-// LIST TAB — color-coded personal lists (localStorage)
+// LIST TAB — color-coded personal lists (Firebase)
 // ============================================================
-function loadLLists(){try{return JSON.parse(localStorage.getItem('kob_lists')||'[]');}catch{return[];}}
-function saveLLists(lists){localStorage.setItem('kob_lists',JSON.stringify(lists));}
-
 function renderList(){
   if(activeListId)renderListDetail(activeListId);
   else renderListIndex();
@@ -1587,7 +1672,7 @@ function renderList(){
 
 function renderListIndex(){
   const el=document.getElementById('l-body');if(!el)return;
-  const lists=loadLLists();
+  const lists=Object.entries(listsD).sort((a,b)=>(b[1].createdAt||'').localeCompare(a[1].createdAt||''));
   if(!lists.length){
     el.innerHTML=`
       <div class="empty" style="padding-top:60px">
@@ -1600,10 +1685,10 @@ function renderListIndex(){
   el.innerHTML=`
     <div class="shdr"><span class="stitle">My Lists</span><span style="font-size:13px;color:var(--mut)">${lists.length} list${lists.length!==1?'s':''}</span></div>
     <div style="padding:0 16px">
-      ${lists.map(list=>{
+      ${lists.map(([id,list])=>{
         const c=TODO_COLORS.find(x=>x.id===list.color)||TODO_COLORS[0];
         const cnt=(list.items||[]).length;
-        return `<div onclick="openListDetail('${list.id}')"
+        return `<div onclick="openListDetail('${id}')"
           style="display:flex;align-items:center;gap:14px;padding:16px;margin-bottom:10px;background:var(--sur);border-radius:16px;box-shadow:0 2px 8px rgba(140,34,82,.08);cursor:pointer;border:1.5px solid ${c.bg}">
           <div style="width:14px;height:14px;border-radius:50%;background:${c.txt};flex-shrink:0"></div>
           <div style="flex:1;min-width:0">
@@ -1620,26 +1705,24 @@ function renderListIndex(){
 
 function openListDetail(id){
   activeListId=id;
-  const lists=loadLLists();
-  const list=lists.find(l=>l.id===id);if(!list)return;
+  const list=listsD[id];if(!list)return;
   const c=TODO_COLORS.find(x=>x.id===list.color)||TODO_COLORS[0];
   document.getElementById('list-ohdr').style.background=c.txt;
   document.getElementById('list-title').textContent=list.name;
-  renderListInner(list,c);
+  renderListInner(id,list,c);
   showListView();
 }
 
 function renderListDetail(id){
-  const lists=loadLLists();
-  const list=lists.find(l=>l.id===id);if(!list){renderListIndex();return;}
+  const list=listsD[id];if(!list){activeListId=null;renderListIndex();return;}
   const c=TODO_COLORS.find(x=>x.id===list.color)||TODO_COLORS[0];
   document.getElementById('list-ohdr').style.background=c.txt;
   document.getElementById('list-title').textContent=list.name;
-  renderListInner(list,c);
+  renderListInner(id,list,c);
   showListView();
 }
 
-function renderListInner(list,c){
+function renderListInner(id,list,c){
   const items=list.items||[];
   document.getElementById('list-inner').innerHTML=`
     <div style="padding:12px 16px;background:${c.bg};border-bottom:1.5px solid rgba(0,0,0,.07)">
@@ -1649,36 +1732,33 @@ function renderListInner(list,c){
     <div style="padding:0 16px">
       ${!items.length
         ?`<div style="text-align:center;color:var(--mut);padding:36px 0;font-size:14px">No items yet — tap + to add!</div>`
-        :items.map(item=>{
+        :items.map((item,idx)=>{
           const ic=TODO_COLORS.find(x=>x.id===item.color)||TODO_COLORS[0];
           return `<div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--bor)">
             <div style="width:12px;height:12px;border-radius:50%;background:${ic.txt};flex-shrink:0"></div>
             <span style="flex:1;font-size:16px;font-weight:600;color:var(--txt)">${esc(item.text)}</span>
-            <button onclick="deleteListItem('${list.id}','${item.id}')"
+            <button onclick="deleteListItem('${id}',${idx})"
               style="width:34px;height:34px;border-radius:50%;border:none;background:rgba(0,0,0,.06);font-size:16px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
           </div>`;
         }).join('')
       }
     </div>
     <div style="padding:16px 16px 8px">
-      <button class="btn btn-d btn-full" onclick="confirmDeleteList('${list.id}')">🗑️ Delete This List</button>
+      <button class="btn btn-d btn-full" onclick="confirmDeleteList('${id}')">🗑️ Delete This List</button>
     </div>
     <div style="height:16px"></div>
   `;
 }
 
-function deleteListItem(listId,itemId){
-  const lists=loadLLists();
-  const list=lists.find(l=>l.id===listId);if(!list)return;
-  list.items=(list.items||[]).filter(i=>i.id!==itemId);
-  saveLLists(lists);
-  const c=TODO_COLORS.find(x=>x.id===list.color)||TODO_COLORS[0];
-  renderListInner(list,c);
+function deleteListItem(listId,idx){
+  const list=listsD[listId];if(!list)return;
+  const updated=(list.items||[]).filter((_,i)=>i!==idx);
+  db.ref('/lists/'+listId+'/items').set(updated);
 }
 
 function confirmDeleteList(id){
   if(!confirm('Delete this list and all its items? Cannot be undone.'))return;
-  saveLLists(loadLLists().filter(l=>l.id!==id));
+  db.ref('/lists/'+id).remove();
   closeListView();
 }
 
@@ -1688,7 +1768,7 @@ function openNewListForm(){
   document.getElementById('m-body').innerHTML=`
     <div class="fg">
       <label class="fl">List Name</label>
-      <input type="text" class="fi" id="new-list-name" placeholder="e.g. Costco, Weekend Project, Gifts...">
+      <input type="text" class="fi" id="new-list-name" placeholder="e.g. Weekend Project, Gifts, Errands...">
     </div>
     <div class="fg">
       <label class="fl">Color</label>
@@ -1714,12 +1794,10 @@ function setLNewColor(id){
 function doCreateList(){
   const name=document.getElementById('new-list-name').value.trim();
   if(!name){alert('Enter a list name.');return;}
-  const lists=loadLLists();
-  lists.push({id:'list_'+Date.now(),name,color:lNewColor,items:[]});
-  saveLLists(lists);
+  const id='list_'+Date.now();
+  db.ref('/lists/'+id).set({name,color:lNewColor,items:[],createdAt:new Date().toISOString()});
   activeListId=null;
   closeModal();
-  renderListIndex();
 }
 
 function openNewListItemForm(){
@@ -1727,7 +1805,7 @@ function openNewListItemForm(){
   document.getElementById('m-title').textContent='+ Add Item';
   document.getElementById('m-body').innerHTML=`
     <div class="fg">
-      <label class="fl">Item Name</label>
+      <label class="fl">Item</label>
       <input type="text" class="fi" id="new-item-name" placeholder="Type item name..."
         onkeydown="if(event.key==='Enter')doAddListItem()">
     </div>
@@ -1755,14 +1833,10 @@ function setLNewItemColor(id){
 function doAddListItem(){
   const text=document.getElementById('new-item-name').value.trim();
   if(!text){alert('Enter an item name.');return;}
-  const lists=loadLLists();
-  const list=lists.find(l=>l.id===activeListId);if(!list)return;
-  if(!list.items)list.items=[];
-  list.items.push({id:'item_'+Date.now(),text,color:lNewItemColor});
-  saveLLists(lists);
+  const list=listsD[activeListId];if(!list)return;
+  const updated=[...(list.items||[]),{text,color:lNewItemColor}];
+  db.ref('/lists/'+activeListId+'/items').set(updated);
   closeModal();
-  const c=TODO_COLORS.find(x=>x.id===list.color)||TODO_COLORS[0];
-  renderListInner(list,c);
 }
 
 // ============================================================
@@ -2094,11 +2168,133 @@ function timeAgo(date){
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 // ============================================================
+// KITCHEN TIMER
+// ============================================================
+function timerBtnTap(){
+  if(timerInterval)openTimerRunning();
+  else openTimerSetup();
+}
+function openTimerSetup(){
+  timerPresetMins=0;
+  document.getElementById('m-title').textContent='⏱️ Kitchen Timer';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg">
+      <label class="fl">Label (optional)</label>
+      <input type="text" class="fi" id="timer-label-in" placeholder="e.g. Bread in oven, Butter softening..." value="${esc(timerLabel)}">
+    </div>
+    <div class="fg">
+      <label class="fl">Presets</label>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px" id="timer-presets">
+        ${[5,10,15,20,25,30,45,60].map(m=>`<button class="timer-preset" onclick="setTimerPreset(${m})">${m}m</button>`).join('')}
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Custom Time</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" class="fi" id="timer-h" placeholder="h" min="0" max="23" style="width:70px;text-align:center" value="0">
+        <span style="font-size:18px;font-weight:700;color:var(--mut)">:</span>
+        <input type="number" class="fi" id="timer-m" placeholder="min" min="0" max="59" style="width:70px;text-align:center" value="0">
+        <span style="font-size:18px;font-weight:700;color:var(--mut)">:</span>
+        <input type="number" class="fi" id="timer-s" placeholder="sec" min="0" max="59" style="width:70px;text-align:center" value="0">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" onclick="startTimer()" style="flex:1">▶ Start</button>
+    </div>
+    <div style="height:8px"></div>
+  `;
+  showModal();
+  setTimeout(()=>document.getElementById('timer-label-in')?.focus(),300);
+}
+function setTimerPreset(mins){
+  timerPresetMins=mins;
+  document.querySelectorAll('.timer-preset').forEach(b=>b.classList.toggle('active',parseInt(b.textContent)===mins));
+  const h=Math.floor(mins/60);const m=mins%60;
+  const hi=document.getElementById('timer-h');const mi=document.getElementById('timer-m');const si=document.getElementById('timer-s');
+  if(hi)hi.value=h;if(mi)mi.value=m;if(si)si.value=0;
+}
+function startTimer(){
+  const lbl=document.getElementById('timer-label-in')?.value.trim()||'';
+  const h=parseInt(document.getElementById('timer-h')?.value)||0;
+  const m=parseInt(document.getElementById('timer-m')?.value)||0;
+  const s=parseInt(document.getElementById('timer-s')?.value)||0;
+  const total=(h*3600+m*60+s)*1000;
+  if(total<=0){alert('Set a time greater than 0.');return;}
+  timerLabel=lbl;timerTotalMs=total;timerEndMs=Date.now()+total;
+  if(timerInterval)clearInterval(timerInterval);
+  timerInterval=setInterval(tickTimer,500);
+  updateTimerBtn();
+  closeModal();
+}
+function tickTimer(){
+  const rem=timerEndMs-Date.now();
+  if(rem<=0){
+    clearInterval(timerInterval);timerInterval=null;
+    const btn=document.getElementById('timer-btn');
+    if(btn){btn.textContent='⏰';btn.className='starter-btn timer-btn-alert';}
+    if(Notification&&Notification.permission==='granted'){
+      new Notification('⏰ Timer done!'+(timerLabel?' — '+timerLabel:''));
+    }
+    return;
+  }
+  updateTimerBtn();
+}
+function updateTimerBtn(){
+  const btn=document.getElementById('timer-btn');if(!btn)return;
+  const rem=Math.max(0,timerEndMs-Date.now());
+  const pct=rem/timerTotalMs;
+  const h=Math.floor(rem/3600000);
+  const m=Math.floor((rem%3600000)/60000);
+  const s=Math.floor((rem%60000)/1000);
+  const txt=h>0?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  btn.textContent=txt;
+  btn.className='starter-btn '+(pct>0.33?'timer-btn-run':pct>0.1?'timer-btn-warn':'timer-btn-alert');
+}
+function cancelTimer(){
+  if(timerInterval)clearInterval(timerInterval);
+  timerInterval=null;timerEndMs=0;timerTotalMs=0;
+  const btn=document.getElementById('timer-btn');
+  if(btn){btn.textContent='⏱️';btn.className='starter-btn';}
+  closeModal();
+}
+function openTimerRunning(){
+  const rem=Math.max(0,timerEndMs-Date.now());
+  const h=Math.floor(rem/3600000);
+  const m=Math.floor((rem%3600000)/60000);
+  const s=Math.floor((rem%60000)/1000);
+  const txt=h>0?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  document.getElementById('m-title').textContent='⏱️ Timer Running';
+  document.getElementById('m-body').innerHTML=`
+    ${timerLabel?`<div style="text-align:center;font-size:14px;color:var(--mut);margin-bottom:8px">${esc(timerLabel)}</div>`:''}
+    <div style="text-align:center;font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:var(--pri);letter-spacing:2px;padding:16px 0">${txt}</div>
+    <button class="btn btn-d btn-full" onclick="cancelTimer()">⏹ Cancel Timer</button>
+    <div style="height:8px"></div>
+  `;
+  showModal();
+}
+
+// ============================================================
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('fab').style.display='none';
-  initFB();renderDash();
+  let fbInited=false;
+  firebase.auth().onAuthStateChanged(user=>{
+    authUser=user;
+    if(user&&!fbInited){fbInited=true;initFB();renderDash();}
+  });
+  firebase.auth().signInAnonymously().catch(e=>{
+    setSS('err','Offline');
+    if(e.code==='auth/operation-not-allowed'){
+      const el=document.getElementById('d-body');
+      if(el)el.insertAdjacentHTML('afterbegin',`
+        <div style="margin:12px 16px 0;padding:14px 16px;background:#FFF8DC;border:2px solid #F0C040;border-radius:14px">
+          <div style="font-weight:700;color:#7A5A00;margin-bottom:4px">⚠️ Action needed</div>
+          <div style="font-size:13px;color:#A07820;line-height:1.6">Enable <strong>Anonymous</strong> sign-in in <strong>Firebase Console → Authentication → Sign-in method</strong>, then refresh.</div>
+        </div>`);
+    }
+  });
 });
 </script>
 </body>
