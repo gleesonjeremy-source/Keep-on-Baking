@@ -1,0 +1,2300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Keep On Baking">
+  <title>Keep On Baking</title>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#FDF5F7; --sur:#FFFFFF; --pri:#8B2252; --acc:#C85480;
+      --acc-lt:#F5D0DC; --bor:#F0D8E2; --txt:#3D1A26; --mut:#A07080;
+      --ok:#6B9E70; --warn:#C4923A; --err:#C04040;
+      --nh:64px; --hh:56px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    html,body{font-family:'Lato',sans-serif;background:var(--bg);color:var(--txt);height:100%;overflow:hidden;}
+    button,input,select,textarea{font-family:'Lato',sans-serif;}
+    input:focus,textarea:focus{border-color:var(--acc)!important;outline:none;}
+    #app{display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;}
+
+    /* HEADER */
+    .hdr{background:var(--pri);padding:0 16px;height:var(--hh);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:10;}
+    .hdr-title{font-family:'Playfair Display',serif;font-size:21px;color:#fff;font-weight:700;letter-spacing:.3px;}
+    .hdr-right{display:flex;align-items:center;gap:10px;}
+    .sync-badge{display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,.75);}
+    .sync-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.4);}
+    .sync-dot.ok{background:#90EE90;}
+    .sync-dot.err{background:#FFB0B0;}
+    .sync-dot.pend{background:#FFD700;animation:pls 1s infinite;}
+    @keyframes pls{0%,100%{opacity:1}50%{opacity:.4}}
+    .starter-btn{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+    /* CONTENT */
+    .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:24px;min-height:0;}
+    .view{display:none;}
+    .view.active{display:block;}
+
+    /* NAV */
+    .bnav{height:calc(var(--nh) + env(safe-area-inset-bottom));background:var(--sur);border-top:1.5px solid var(--bor);display:flex;z-index:10;padding-bottom:env(safe-area-inset-bottom);flex-shrink:0;}
+    .nbtn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;color:var(--mut);font-size:9px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;}
+    .nbtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    .nbtn.active{color:var(--acc);}.nbtn.active svg{stroke:var(--acc);}
+
+    /* FAB */
+    .fab{position:fixed;bottom:calc(var(--nh)+14px+env(safe-area-inset-bottom));right:16px;width:52px;height:52px;border-radius:50%;background:var(--acc);color:#fff;border:none;font-size:28px;display:none;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(200,84,128,.4);cursor:pointer;z-index:50;}
+    .fab:active{transform:scale(.93);}
+
+    /* STARTER OVERLAY */
+    .s-ov{position:fixed;inset:0;z-index:300;background:var(--bg);transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:env(safe-area-inset-bottom);}
+    .s-ov.open{transform:translateX(0);}
+    .s-ohdr{background:var(--pri);color:#fff;padding:16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1;}
+    .s-ohdr .title{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;}
+    .back-btn{border:none;background:rgba(255,255,255,.2);color:#fff;padding:8px 14px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;}
+
+    /* MODAL */
+    .m-ov{position:fixed;inset:0;background:rgba(61,26,38,.5);z-index:400;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s;}
+    .m-ov.open{opacity:1;pointer-events:all;}
+    .modal{background:var(--bg);border-radius:24px 24px 0 0;width:100%;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);padding-bottom:calc(16px+env(safe-area-inset-bottom));}
+    .m-ov.open .modal{transform:translateY(0);}
+    .m-handle{width:36px;height:4px;background:var(--bor);border-radius:2px;margin:12px auto 0;}
+    .m-hdr{padding:14px 16px 8px;display:flex;align-items:center;justify-content:space-between;}
+    .m-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--pri);}
+    .m-close{width:32px;height:32px;border-radius:50%;background:var(--acc-lt);border:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--acc);}
+    .m-body{padding:6px 16px 8px;}
+
+    /* BUTTONS */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 18px;border-radius:10px;border:none;font-weight:700;font-size:14px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+    .btn:active{transform:scale(.96);}
+    .btn-p{background:var(--acc);color:#fff;}
+    .btn-pri{background:var(--pri);color:#fff;}
+    .btn-s{background:var(--acc-lt);color:var(--pri);}
+    .btn-g{background:transparent;color:var(--acc);border:1.5px solid var(--acc);}
+    .btn-d{background:var(--err);color:#fff;}
+    .btn-ok{background:var(--ok);color:#fff;}
+    .btn-sm{padding:7px 13px;font-size:13px;border-radius:8px;}
+    .btn-full{width:100%;}
+
+    /* FORMS */
+    .fg{margin-bottom:16px;}
+    .fl{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);margin-bottom:7px;}
+    .fi,.fta{width:100%;padding:12px 14px;border:1.5px solid var(--bor);border-radius:10px;font-size:16px;color:var(--txt);background:var(--sur);transition:border-color .2s;}
+    .fta{min-height:80px;resize:vertical;}
+
+    /* PHOTO ZONE */
+    .pzone{width:100%;height:140px;border:2px dashed var(--bor);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--sur);position:relative;overflow:hidden;cursor:pointer;}
+    .pzone img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+    .pzone-hint{font-size:13px;color:var(--mut);text-align:center;line-height:1.5;pointer-events:none;}
+    .pzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0;}
+    .upwrap{height:4px;background:var(--bor);border-radius:2px;overflow:hidden;margin-top:8px;display:none;}
+    .upbar{height:100%;background:var(--acc);transition:width .3s;width:0;}
+
+    /* CATEGORY BUTTONS */
+    .cat-grid{display:flex;flex-wrap:wrap;gap:8px;}
+    .catb{padding:9px 14px;border-radius:20px;border:2px solid var(--bor);background:var(--sur);font-size:13px;font-weight:700;color:var(--mut);cursor:pointer;white-space:nowrap;transition:all .2s;}
+    .catb.sel{border-color:var(--acc);background:var(--acc);color:#fff;}
+
+    /* PILLS */
+    .pill{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+    .c-breakfast{background:#FFF3CD;color:#856404;}
+    .c-lunch{background:#D1ECF1;color:#0C5460;}
+    .c-dinner{background:#D4EDDA;color:#155724;}
+    .c-dessert{background:#F8D7DA;color:#721C24;}
+    .c-snack{background:#FDE2D5;color:#7A3520;}
+    .c-sourdough{background:#E8E0CC;color:#5A4A1A;}
+    .c-baked{background:#F5D0DC;color:#8B2252;}
+
+    /* ING ROWS */
+    .ir{display:flex;gap:6px;margin-bottom:8px;align-items:center;}
+    .ir input{padding:10px 10px;border:1.5px solid var(--bor);border-radius:8px;font-size:14px;background:var(--sur);color:var(--txt);}
+    .ir .iq{width:82px;flex-shrink:0;}
+    .ir .in{flex:1;}
+    .del-ir{width:32px;height:32px;border-radius:50%;background:none;border:none;font-size:20px;color:var(--mut);cursor:pointer;flex-shrink:0;}
+
+    /* SERVINGS */
+    .sv-ctr{display:flex;align-items:center;gap:10px;}
+    .sv-btn{width:36px;height:36px;border-radius:50%;border:2px solid var(--bor);background:var(--sur);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--pri);font-weight:700;}
+    .sv-num{font-size:20px;font-weight:700;color:var(--pri);min-width:28px;text-align:center;}
+
+    /* SECTION HEADERS */
+    .shdr{padding:16px 16px 8px;display:flex;align-items:center;justify-content:space-between;}
+    .stitle{font-family:'Playfair Display',serif;font-size:19px;font-weight:600;color:var(--pri);}
+    .sub-h{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;color:var(--pri);margin:14px 0 10px;}
+
+    /* DASHBOARD */
+    .d-greet{padding:18px 16px 6px;}
+    .d-greet h2{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--pri);}
+    .d-greet p{font-size:13px;color:var(--mut);margin-top:3px;}
+
+    .tonight-card{margin:10px 16px 0;background:linear-gradient(135deg,var(--pri),var(--acc));border-radius:18px;padding:18px;color:#fff;box-shadow:0 4px 16px rgba(140,34,82,.25);}
+    .t-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;opacity:.8;margin-bottom:8px;}
+    .t-recipe{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;}
+    .t-empty{font-size:15px;opacity:.75;font-style:italic;}
+    .t-acts{display:flex;gap:8px;margin-top:12px;}
+    .t-btn{padding:8px 14px;border-radius:8px;border:none;font-weight:700;font-size:13px;cursor:pointer;}
+    .t-btn-w{background:#fff;color:var(--pri);}
+    .t-btn-o{background:rgba(255,255,255,.2);color:#fff;border:1.5px solid rgba(255,255,255,.5);}
+
+    .wk-card{margin:10px 16px 16px;background:var(--sur);border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(140,34,82,.1);border:1px solid var(--bor);}
+    .wk-row{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--bg);min-height:46px;gap:10px;}
+    .wk-row:last-child{border-bottom:none;}
+    .wk-day{font-size:12px;font-weight:700;color:var(--mut);width:32px;flex-shrink:0;}
+    .wk-day.tod{color:var(--acc);}
+    .wk-add{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--bor);background:none;font-size:16px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+    /* RECIPES */
+    .rtabs{display:flex;background:var(--sur);border-bottom:1.5px solid var(--bor);}
+    .rtab{flex:1;padding:12px;text-align:center;font-size:13px;font-weight:700;color:var(--mut);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;}
+    .rtab.active{color:var(--acc);border-bottom-color:var(--acc);}
+
+    .fbar{display:flex;gap:8px;padding:10px 16px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+    .fbar::-webkit-scrollbar{display:none;}
+    .fchip{flex-shrink:0;padding:7px 13px;border-radius:20px;border:1.5px solid var(--bor);background:var(--sur);font-size:13px;font-weight:700;color:var(--mut);cursor:pointer;white-space:nowrap;}
+    .fchip.active{background:var(--pri);border-color:var(--pri);color:#fff;}
+
+    .rgrid{padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .rcard{background:var(--sur);border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(140,34,82,.12);cursor:pointer;position:relative;}
+    .rcard:active{transform:scale(.97);}
+    .rcard-img{width:100%;height:110px;object-fit:cover;display:block;}
+    .rcard-ph{width:100%;height:110px;background:linear-gradient(135deg,#FAE8EF,#F5D0DC);display:flex;align-items:center;justify-content:center;font-size:36px;}
+    .rcard-body{padding:10px;}
+    .rcard-name{font-size:14px;font-weight:700;color:var(--txt);margin-bottom:5px;line-height:1.3;}
+    .heart-btn{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.9);border:none;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.15);}
+    .rot-badge{font-size:10px;color:var(--acc);font-weight:700;margin-top:4px;}
+    .r-det-img{width:calc(100% + 32px);margin:0 -16px;max-height:220px;object-fit:cover;display:block;margin-bottom:14px;}
+
+    /* IDEAS */
+    .idea-grid{padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .idea-card{background:var(--sur);border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(140,34,82,.08);cursor:pointer;}
+    .idea-card:active{transform:scale(.97);}
+    .idea-card-img{width:100%;height:90px;object-fit:cover;display:block;}
+    .idea-card-ph{width:100%;height:90px;background:linear-gradient(135deg,#FAE8EF,#F5D0DC);display:flex;align-items:center;justify-content:center;font-size:30px;}
+    .idea-card-body{padding:10px;}
+    .idea-card-name{font-size:14px;font-weight:700;color:var(--txt);line-height:1.3;}
+
+    /* CALENDAR */
+    .wknav{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--sur);border-bottom:1.5px solid var(--bor);}
+    .wklbl{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--pri);}
+    .wkbtn{width:36px;height:36px;border-radius:50%;border:none;background:var(--acc-lt);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--acc);}
+    .dcard{margin:8px 16px 0;background:var(--sur);border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(140,34,82,.07);}
+    .dhdr{padding:10px 14px;background:linear-gradient(90deg,#FAE8EF,#FDF5F7);display:flex;align-items:center;justify-content:space-between;}
+    .dname{font-weight:700;font-size:14px;color:var(--pri);}
+    .dname.tod{color:var(--acc);}
+    .ddate{font-size:12px;color:var(--mut);}
+    .sd-badge{font-size:11px;font-weight:700;background:#FFF3E8;color:#8B4513;padding:3px 8px;border-radius:6px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .mslot{padding:9px 14px;display:flex;align-items:center;border-bottom:1px solid var(--bg);min-height:46px;gap:8px;}
+    .mslot:last-of-type{border-bottom:none;}
+    .mslot-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);width:72px;flex-shrink:0;}
+    .mslot-val{flex:1;font-size:14px;font-weight:700;color:var(--txt);cursor:pointer;}
+    .mslot-val.custom{color:var(--mut);font-style:italic;font-weight:400;}
+    .mslot-val:active{color:var(--acc);}
+    .mslot-emp{flex:1;font-size:13px;color:var(--bor);font-style:italic;}
+    .s-add{width:30px;height:30px;border-radius:50%;border:1.5px dashed var(--bor);background:none;font-size:18px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .s-rm{background:none;border:none;color:var(--mut);font-size:18px;cursor:pointer;padding:4px;flex-shrink:0;}
+    .dnote-row{padding:8px 14px;}
+    .dnote-in{width:100%;padding:7px 10px;border:1.5px solid var(--bor);border-radius:8px;font-size:13px;background:var(--bg);color:var(--txt);}
+
+    /* SHOPPING — NEW INLINE STORE LAYOUT */
+    .store-section{margin:12px 16px 0;border-radius:18px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.12);}
+    .store-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;}
+    .store-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;}
+    .store-count{font-size:12px;color:rgba(255,255,255,.8);font-weight:700;}
+    .store-menu-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.35);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .store-item-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.05);background:#fff;}
+    .store-item-row.done-row{background:#fafafa;}
+    .store-check-btn{width:28px;height:28px;border-radius:50%;border:2.5px solid;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;transition:all .2s;}
+    .store-item-text{flex:1;font-size:16px;font-weight:600;color:var(--txt);}
+    .store-item-text.done{text-decoration:line-through;color:var(--mut);font-weight:400;}
+    .store-item-qty{font-size:13px;color:var(--mut);flex-shrink:0;margin-right:4px;}
+    .store-del-btn{width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,.06);font-size:16px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .store-add-row{display:flex;gap:8px;padding:12px 14px;}
+    .store-add-input{flex:1;padding:11px 13px;border:1.5px solid rgba(0,0,0,.14);border-radius:10px;font-size:15px;background:rgba(255,255,255,.85);color:var(--txt);}
+    .store-add-input:focus{outline:none;border-color:rgba(0,0,0,.32);background:#fff;}
+    .store-clear-row{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 10px;}
+
+    /* MISC */
+    .empty{padding:40px 16px;text-align:center;color:var(--mut);}
+    .empty .ei{font-size:48px;margin-bottom:12px;}
+    input[type=date]{padding:11px 13px;border:1.5px solid var(--bor);border-radius:10px;font-size:15px;background:var(--sur);color:var(--txt);width:100%;}
+    .picker-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--bor);cursor:pointer;}
+    .picker-item:last-child{border-bottom:none;}
+    .picker-th{width:46px;height:46px;border-radius:10px;object-fit:cover;flex-shrink:0;}
+    .picker-ph{width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,#FAE8EF,#F5D0DC);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+
+    /* DAY PICKER */
+    .day-pick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+    .day-pick-btn{padding:10px 4px;border-radius:10px;border:1.5px solid var(--bor);background:var(--sur);font-size:12px;font-weight:700;color:var(--txt);cursor:pointer;text-align:center;transition:all .2s;}
+    .day-pick-btn.today-d{border-color:var(--acc);color:var(--acc);}
+    .day-pick-btn.sel{background:var(--acc);border-color:var(--acc);color:#fff;}
+    .slot-pick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .slot-pick-btn{padding:12px;border-radius:10px;border:1.5px solid var(--bor);background:var(--sur);font-size:13px;font-weight:700;color:var(--txt);cursor:pointer;text-align:center;}
+    .slot-pick-btn:active{background:var(--acc-lt);}
+    .slot-pick-btn.sel{background:var(--acc-lt);border-color:var(--acc);}
+
+    .shop-card{margin:10px 16px 0;background:linear-gradient(135deg,#FAE8EF,#FDF5F7);border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 3px 12px rgba(140,34,82,.12);border:1.5px solid var(--bor);}
+    .shop-card:active{transform:scale(.98);}
+    .shop-card-left{display:flex;align-items:center;gap:14px;}
+    .shop-card-icon{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--pri),var(--acc));display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+    .shop-card-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--pri);}
+    .shop-card-sub{font-size:13px;color:var(--mut);margin-top:2px;}
+    .quote-card{margin:10px 16px 0;background:linear-gradient(135deg,#FAE8EF,#FDF5F7);border-radius:16px;padding:14px 16px;border-left:4px solid var(--acc);box-shadow:0 2px 12px rgba(140,34,82,.1);}
+    .quote-text{font-family:'Playfair Display',serif;font-size:14px;font-style:italic;color:var(--pri);line-height:1.6;}
+    .quote-ref{font-size:12px;color:var(--mut);margin-top:6px;font-weight:700;}
+
+    .color-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+    .color-dot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s;}
+    .color-dot.sel{border-color:var(--pri);transform:scale(1.15);}
+
+    /* STARTER */
+    .sc-card{margin:16px;background:var(--sur);border-radius:20px;overflow:hidden;box-shadow:0 6px 20px rgba(140,34,82,.15);}
+    .sc-top{background:linear-gradient(135deg,var(--pri),var(--acc));color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
+    .sc-badge{font-size:14px;font-weight:700;}
+    .sc-meta{display:flex;gap:10px;padding:12px 14px 0;}
+    .sc-box{flex:1;background:var(--bg);border-radius:10px;padding:10px 12px;text-align:center;}
+    .sc-box .v{font-size:14px;font-weight:700;color:var(--pri);}
+    .sc-box .l{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+    .ltog{display:flex;background:var(--bg);border-radius:8px;padding:3px;margin:12px 14px 0;}
+    .lbtn{flex:1;padding:9px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:var(--mut);transition:all .2s;}
+    .lbtn.active{background:var(--sur);color:var(--pri);box-shadow:0 1px 4px rgba(140,34,82,.15);}
+    .sc-acts{padding:12px 14px 14px;display:flex;gap:8px;}
+    .bsched{background:var(--bg);border-radius:10px;padding:10px 12px;margin-top:10px;}
+    .bsrow{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--bor);font-size:13px;}
+    .bsrow:last-child{border-bottom:none;}
+    .bsdate{color:var(--mut);width:90px;flex-shrink:0;font-size:12px;}
+    .blog-entry{padding:10px 14px;border-bottom:1px solid var(--bor);}
+    .blog-date{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+
+    #list-ov .s-ohdr{display:flex;align-items:center;gap:12px;}
+    #list-ov .title{flex:1;text-align:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:600;}
+    #list-inner{padding:0;}
+
+    /* MIGRATION BANNER */
+    .migrate-banner{margin:12px 16px 0;padding:14px 16px;background:linear-gradient(135deg,#FFF8DC,#FFFACD);border-radius:16px;border:2px solid #F0C040;box-shadow:0 2px 12px rgba(240,192,64,.25);}
+    .migrate-banner-title{font-size:15px;font-weight:700;color:#7A5A00;margin-bottom:4px;}
+    .migrate-banner-sub{font-size:13px;color:#A07820;line-height:1.5;margin-bottom:12px;}
+    .migrate-banner-btn{width:100%;padding:12px;background:#7A5A00;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.2px;}
+    .migrate-banner-btn:active{opacity:.85;}
+    #view-calendar.active{display:flex!important;flex-direction:column;height:100%;overflow:hidden;}
+    #c-body{flex:1;display:flex;flex-direction:column;min-height:0;}
+    .timer-btn-run{background:rgba(107,158,112,.35)!important;border-color:var(--ok)!important;font-size:11px!important;font-weight:700!important;letter-spacing:.3px;font-variant-numeric:tabular-nums;}
+    .timer-btn-warn{background:rgba(196,146,58,.35)!important;border-color:var(--warn)!important;}
+    .timer-btn-alert{background:rgba(192,64,64,.4)!important;border-color:var(--err)!important;animation:pls .6s infinite;}
+    .timer-preset{padding:10px;border-radius:10px;border:1.5px solid var(--bor);background:var(--sur);font-size:14px;font-weight:700;color:var(--txt);cursor:pointer;text-align:center;}
+    .timer-preset.active{background:var(--acc);color:#fff;border-color:var(--acc);}
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr">
+    <span class="hdr-title">🍞 Keep On Baking</span>
+    <div class="hdr-right">
+      <span class="sync-badge"><span class="sync-dot pend" id="sdot"></span><span id="stxt">Connecting</span></span>
+      <button class="starter-btn" id="timer-btn" onclick="timerBtnTap()" title="Kitchen Timer">⏱️</button>
+      <button class="starter-btn" onclick="openStarter()">🌱</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="view active" id="view-dashboard"><div id="d-body"></div></div>
+    <div class="view" id="view-recipes"><div id="r-body"></div></div>
+    <div class="view" id="view-calendar"><div id="c-body"></div></div>
+    <!-- ✅ FIXED: Grocery tab now uses view-grocery (Firebase-backed) -->
+    <div class="view" id="view-grocery"><div id="g-body"></div></div>
+    <div class="view" id="view-todos"><div id="t-body"></div></div>
+    <div class="view" id="view-list"><div id="l-body"></div></div>
+  </div>
+  <nav class="bnav">
+    <button class="nbtn active" data-v="dashboard" onclick="nav('dashboard')">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home
+    </button>
+    <button class="nbtn" data-v="recipes" onclick="nav('recipes')">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Recipes
+    </button>
+    <button class="nbtn" data-v="calendar" onclick="nav('calendar')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar
+    </button>
+    <button class="nbtn" data-v="list" onclick="nav('list')">
+      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Lists
+    </button>
+    <!-- ✅ FIXED: Now navigates to 'grocery' (Firebase) instead of 'todos' (localStorage) -->
+    <button class="nbtn" data-v="grocery" onclick="nav('grocery')">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Grocery
+    </button>
+  </nav>
+  <button class="fab" id="fab" onclick="fabAct()">+</button>
+</div>
+
+<!-- Starter Overlay -->
+<div class="s-ov" id="s-ov">
+  <div class="s-ohdr">
+    <span class="title">🌱 Starter Manager</span>
+    <button class="back-btn" onclick="closeStarter()">✕ Close</button>
+  </div>
+  <div id="s-inner"></div>
+</div>
+
+<div class="s-ov" id="list-ov">
+  <div class="s-ohdr" id="list-ohdr">
+    <button class="back-btn" onclick="closeListView()">‹ Back</button>
+    <span class="title" id="list-title"></span>
+    <div style="width:60px"></div>
+  </div>
+  <div id="list-inner"></div>
+</div>
+
+<!-- Modal -->
+<div class="m-ov" id="m-ov" onclick="handleOvClick(event)">
+  <div class="modal" id="modal">
+    <div class="m-handle"></div>
+    <div class="m-hdr">
+      <span class="m-title" id="m-title"></span>
+      <button class="m-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="m-body" id="m-body"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ============================================================
+// FIREBASE
+// ============================================================
+firebase.initializeApp({
+  apiKey:"AIzaSyAECKBZbUYyvuTnsYJLJikEb5ZmgbaP4yc",
+  authDomain:"keep-on-baking.firebaseapp.com",
+  databaseURL:"https://keep-on-baking-default-rtdb.firebaseio.com",
+  projectId:"keep-on-baking",
+  storageBucket:"keep-on-baking.firebasestorage.app",
+  messagingSenderId:"723183814903",
+  appId:"1:723183814903:web:566962f611f3f269172bf2"
+});
+const db=firebase.database(), storage=firebase.storage();
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+const CATS=[
+  {id:'breakfast',label:'Breakfast',emoji:'🌅',cls:'c-breakfast'},
+  {id:'lunch',label:'Lunch',emoji:'☀️',cls:'c-lunch'},
+  {id:'dinner',label:'Dinner',emoji:'🍽️',cls:'c-dinner'},
+  {id:'dessert',label:'Dessert',emoji:'🍰',cls:'c-dessert'},
+  {id:'snack',label:'Snack',emoji:'🫐',cls:'c-snack'},
+  {id:'sourdough',label:'Bread/Sourdough',emoji:'🍞',cls:'c-sourdough'},
+  {id:'baked',label:'Baked Goods',emoji:'🥐',cls:'c-baked'},
+];
+const CM={};CATS.forEach(c=>CM[c.id]=c);
+
+const SLOTS=[
+  {id:'breakfast',label:'Breakfast',cats:['breakfast','snack']},
+  {id:'lunch',label:'Lunch',cats:['lunch','snack']},
+  {id:'dinner',label:'Dinner',cats:['dinner']},
+  {id:'dessert',label:'Dessert',cats:['dessert','baked']},
+];
+
+const SD_DEFAULT=[
+  {offset:-3,emoji:'🌾',label:'Feed Starter / Levain Build'},
+  {offset:-2,emoji:'🥣',label:'Mix Dough + Bulk Ferment'},
+  {offset:-1,emoji:'🔄',label:'Shape + Cold Proof (fridge)'},
+  {offset:0, emoji:'🔥',label:'Score & Bake!'},
+];
+let SD=[...SD_DEFAULT];
+
+// ============================================================
+// STATE
+// ============================================================
+const TODO_COLORS=[
+  {id:'pink',bg:'#F5D0DC',txt:'#8B2252'},
+  {id:'rose',bg:'#FAE8EF',txt:'#C85480'},
+  {id:'purple',bg:'#E8D5F5',txt:'#5B2C8B'},
+  {id:'blue',bg:'#D5E8F5',txt:'#1A5276'},
+  {id:'teal',bg:'#D5F0EE',txt:'#1A6B65'},
+  {id:'green',bg:'#D5F5E3',txt:'#1E8449'},
+];
+const GLIST_COLORS=[
+  {id:'red',bg:'#FADADD',txt:'#A93226'},
+  {id:'orange',bg:'#FDEBD0',txt:'#A04000'},
+  {id:'yellow',bg:'#FEF9E7',txt:'#9A7D0A'},
+  {id:'green',bg:'#D5F5E3',txt:'#1E8449'},
+  {id:'teal',bg:'#D5F0EE',txt:'#1A6B65'},
+  {id:'blue',bg:'#D5E8F5',txt:'#1A5276'},
+  {id:'purple',bg:'#E8D5F5',txt:'#5B2C8B'},
+  {id:'pink',bg:'#F5D0DC',txt:'#8B2252'},
+];
+const GLIST_EMOJIS=['🛒','🏪','🏬','🥦','🥩','🍞','💊','🐾','🏠','🌿','🍷','🎂'];
+let newGColor='red',newGEmoji='🛒';
+let authUser=null;
+let timerLabel='',timerEndMs=0,timerInterval=null,timerTotalMs=0,timerPresetMins=0;
+let recipes={},calD={},ideas={},groceryLists={},listsD={};
+let starterD={lastFed:null,location:'counter',tempNote:'',bakeDay:null};
+let bakeLog={},shopItems=[],shopStaples=[];
+let curView='dashboard',wkOff=0,rFilt='all',rTab='recipes',shopTab='list',calDayDetail=null;
+let calMonth=new Date().getMonth(),calYear=new Date().getFullYear();
+let todos={},newTodoColor='pink',selectedStoreId=null;
+let activeListId=null,lNewColor='pink',lNewItemColor='pink';
+let activeGListId=null;
+let pendingPhoto=null,rFormCat=null,rFormServ=4,editingRid=null,addShopRid=null;
+let calPickRid=null,calPickStep=1,calPickDs=null;
+
+// ============================================================
+// FIREBASE LISTENERS
+// ============================================================
+function initFB(){
+  setSS('pend','Syncing...');
+  db.ref('/recipes').on('value',s=>{
+    recipes=s.val()||{};setSS('ok','Synced');
+    if(curView==='recipes')renderRecipes();
+    if(curView==='dashboard')renderDash();
+    if(curView==='calendar')renderCalendar();
+  },()=>setSS('err','Offline'));
+  db.ref('/calendar').on('value',s=>{
+    calD=s.val()||{};
+    if(curView==='calendar'){if(calDayDetail)renderDayDetail(calDayDetail);else renderCalendar();}
+    if(curView==='dashboard')renderDash();
+  });
+  db.ref('/ideas').on('value',s=>{
+    ideas=s.val()||{};
+    if(curView==='recipes'&&rTab==='ideas')renderRecipes();
+  });
+  db.ref('/starter').on('value',s=>{
+    starterD=Object.assign({lastFed:null,location:'counter',tempNote:'',bakeDay:null},s.val()||{});
+    if(s.val()&&s.val().schedule) SD=[...s.val().schedule];
+    if(document.getElementById('s-ov').classList.contains('open'))renderStarter();
+    if(curView==='dashboard')renderDash();
+  });
+  db.ref('/starter/log').on('value',s=>{
+    bakeLog=s.val()||{};
+    if(document.getElementById('s-ov').classList.contains('open'))renderStarter();
+  });
+  db.ref('/grocery/lists').on('value',s=>{
+    groceryLists=s.val()||{};
+    if(curView==='grocery')renderGrocery();
+    if(curView==='dashboard')renderDash();
+  });
+  db.ref('/todos').on('value',s=>{
+    todos=s.val()||{};
+  });
+  db.ref('/lists').on('value',s=>{
+    listsD=s.val()||{};
+    if(curView==='list')renderList();
+  });
+}
+function setSS(s,t){
+  const d=document.getElementById('sdot'),tx=document.getElementById('stxt');
+  if(d)d.className='sync-dot '+s;if(tx)tx.textContent=t;
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function nav(v){
+  curView=v;
+  document.querySelectorAll('.nbtn').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
+  document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.id==='view-'+v));
+  const fab=document.getElementById('fab');
+  fab.style.display=(v==='recipes'||v==='grocery'||v==='list')?'flex':'none';
+  render();
+}
+function render(){
+  if(curView==='dashboard')renderDash();
+  else if(curView==='recipes')renderRecipes();
+  else if(curView==='calendar')renderCalendar();
+  else if(curView==='grocery')renderGrocery();
+  else if(curView==='list')renderList();
+}
+function fabAct(){
+  if(curView==='recipes'){
+    if(rTab==='recipes')openRecipeForm(null);
+    else openIdeaForm(null);
+  } else if(curView==='grocery')openNewGListModal();
+  else if(curView==='list'){if(activeListId)openNewListItemForm();else openNewListForm();}
+}
+
+// ============================================================
+// GREETINGS & QUOTES
+// ============================================================
+const GREETINGS=[
+  {h:[0,11],  msgs:["Good morning, beautiful! 🌸","Rise and shine, love! ☀️","Good morning, gorgeous! 🌷","Hello sweetheart! 🥐 Ready to bake?","Morning, lovely! 💕"]},
+  {h:[12,16], msgs:["Hello beautiful! ✨","Hey gorgeous! 💕","Hello lovely! 🌸","Hi sweetheart! 🫶","Hello, my love! 🌺"]},
+  {h:[17,23], msgs:["Good evening, love! 🌙","Good evening, beautiful! ✨","Evening, gorgeous! 💕","Good evening, sweetheart! 🌸","Evening, lovely! 🌟"]},
+];
+const SUBTITLES=["What are we baking today?","The kitchen is yours today.","Ready to create something delicious?","Something smells amazing already!","Let's make something wonderful. 🍞","Your kitchen awaits!","Time to make magic happen!"];
+const QUOTES=[
+  {text:"Give us this day our daily bread.",ref:"Matthew 6:11"},
+  {text:"Taste and see that the Lord is good.",ref:"Psalm 34:8"},
+  {text:"The kingdom of heaven is like leaven a woman hid in flour until it was all leavened.",ref:"Matthew 13:33"},
+  {text:"Whether you eat or drink, do it all for the glory of God.",ref:"1 Corinthians 10:31"},
+  {text:"She brings her food from afar... her lamp does not go out at night.",ref:"Proverbs 31:15"},
+  {text:"Man shall not live by bread alone, but by every word from the mouth of God.",ref:"Matthew 4:4"},
+  {text:"Blessed shall be your basket and your kneading bowl.",ref:"Deuteronomy 28:5"},
+  {text:"Strength and dignity are her clothing, and she laughs at the time to come.",ref:"Proverbs 31:25"},
+  {text:"She works with willing hands.",ref:"Proverbs 31:13"},
+  {text:"Her children rise up and call her blessed; her husband also praises her.",ref:"Proverbs 31:28"},
+  {text:"Whatever you do, work heartily, as for the Lord and not for men.",ref:"Colossians 3:23"},
+  {text:"I can do all things through Christ who strengthens me.",ref:"Philippians 4:13"},
+  {text:"The Lord your God is in your midst. He will rejoice over you with gladness.",ref:"Zephaniah 3:17"},
+  {text:"She opens her hand to the poor and reaches out her hands to the needy.",ref:"Proverbs 31:20"},
+  {text:"You are altogether beautiful, my love; there is no flaw in you.",ref:"Song of Solomon 4:7"},
+];
+
+function getDayIdx(){
+  const now=new Date();
+  return Math.floor((now-new Date(now.getFullYear(),0,0))/(1000*60*60*24));
+}
+function getDashGreeting(){
+  const h=new Date().getHours();
+  const dayIdx=getDayIdx();
+  const grp=GREETINGS.find(g=>h>=g.h[0]&&h<=g.h[1])||GREETINGS[0];
+  return grp.msgs[dayIdx%grp.msgs.length];
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDash(){
+  const el=document.getElementById('d-body');
+  const today=fmtD(new Date());
+  const ss=starterD.lastFed?getStStatus():null;
+  const dayIdx=getDayIdx();
+  const greeting=getDashGreeting();
+  const subtitle=SUBTITLES[dayIdx%SUBTITLES.length];
+  const quote=QUOTES[dayIdx%QUOTES.length];
+  const activeItems=Object.values(groceryLists).reduce((s,l)=>s+(l.items||[]).filter(i=>!i.checked).length,0);
+  const gListCount=Object.keys(groceryLists).length;
+  const shopSub=gListCount>0?`${activeItems} item${activeItems!==1?'s':''} across ${gListCount} store${gListCount!==1?'s':''}`:'Tap + to add your first store';
+  const todayDay=calD[today]||{};
+  const dinnerRaw=todayDay.dinner;
+  const dinnerV=dinnerRaw?(typeof dinnerRaw==='object'?{name:'Recipe',emoji:'🍽️',id:null}:getMealDisplay(dinnerRaw)):null;
+
+  const wkHtml=getWeekDates(0).map(ds=>{
+    const d=new Date(ds+'T12:00:00'),isT=ds===today;
+    const day=calD[ds]||{};
+    const sde=day.sourdough;
+    const mealsHtml=SLOTS.map(slot=>{
+      const v=day[slot.id];if(!v)return'';
+      const m=getMealDisplay(v);if(!m)return'';
+      return`<div style="display:flex;align-items:center;gap:4px;padding:1px 0">
+        <span style="font-size:10px;color:var(--mut);font-weight:700;text-transform:uppercase;width:50px;flex-shrink:0">${slot.label.slice(0,5)}</span>
+        <span style="flex:1;font-size:13px;font-weight:700;color:${m.isCustom?'var(--mut)':'var(--txt)'};font-style:${m.isCustom?'italic':'normal'};cursor:pointer" onclick="editDashMeal('${ds}','${slot.id}')">${esc(m.name)}</span>
+        <button onclick="editDashMeal('${ds}','${slot.id}')" style="background:none;border:none;font-size:12px;cursor:pointer;color:var(--mut);padding:2px">✏️</button>
+      </div>`;
+    }).join('');
+    return `<div class="wk-row">
+      <span class="wk-day ${isT?'tod':''}">${d.toLocaleDateString('en',{weekday:'short'})}</span>
+      <div style="flex:1;min-width:0">
+        ${sde?`<div style="font-size:12px;color:#8B4513;font-weight:700;padding:2px 0">${sde.emoji} ${sde.label}</div>`:''}
+        ${mealsHtml||(!sde?`<div style="font-size:13px;color:var(--bor);font-style:italic">—</div>`:'')}
+        ${day.note?`<div onclick="openDayNoteModal('${ds}')" style="font-size:11px;color:var(--mut);font-style:italic;margin-top:2px;cursor:pointer">📝 ${esc(day.note)}</div>`:''}
+      </div>
+      <button class="wk-add" onclick="quickAddMeal('${ds}')" title="Add meal">+</button>
+    </div>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div class="d-greet">
+      <h2>${greeting}</h2>
+      <p>${subtitle}</p>
+    </div>
+    <div class="quote-card">
+      <div class="quote-text">"${quote.text}"</div>
+      <div class="quote-ref">— ${quote.ref}</div>
+    </div>
+    ${dinnerV?`<div class="tonight-card">
+      <div class="t-lbl">Tonight's Meal</div>
+      <div class="t-recipe">${dinnerV.emoji||'🍽️'} ${esc(dinnerV.name)}</div>
+      <div class="t-acts">
+        <button class="t-btn t-btn-w" onclick="openSlotPicker('${today}','dinner',true)">✏️ Change</button>
+        ${dinnerV.id?`<button class="t-btn t-btn-o" onclick="openRecipeDetail('${dinnerV.id}')">📖 Recipe</button>`:''}
+      </div>
+    </div>`:''}
+    ${ss?`<div style="margin:10px 16px 0;padding:12px 14px;background:var(--sur);border-radius:14px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(140,34,82,.08)">
+      <span style="font-size:14px;font-weight:700;color:var(--pri)">🌱 Starter: ${ss.emoji} ${ss.label}</span>
+      <button onclick="openStarter()" style="border:none;background:none;font-size:13px;font-weight:700;color:var(--acc);cursor:pointer">Manage →</button>
+    </div>`:''}
+    <div class="shdr">
+      <span class="stitle">This Week</span>
+      <button onclick="nav('calendar')" style="border:none;background:none;font-size:13px;font-weight:700;color:var(--acc);cursor:pointer">Full Calendar →</button>
+    </div>
+    <div class="wk-card">${wkHtml}</div>
+    <div style="height:12px"></div>
+  `;
+}
+
+function editDashMeal(ds,slot){openSlotPicker(ds,slot,true);}
+function quickAddMeal(ds){
+  document.getElementById('m-title').textContent='Add to '+new Date(ds+'T12:00:00').toLocaleDateString('en',{weekday:'long',month:'short',day:'numeric'});
+  document.getElementById('m-body').innerHTML=`
+    <p style="font-size:13px;color:var(--mut);margin-bottom:14px">Which meal?</p>
+    <div class="slot-pick-grid">
+      ${SLOTS.map(s=>`<button class="slot-pick-btn" onclick="openSlotPicker('${ds}','${s.id}')">${s.label}</button>`).join('')}
+    </div>
+    <button class="slot-pick-btn" onclick="openDayNoteModal('${ds}')" style="margin-top:8px;width:100%;grid-column:span 2">📝 Add Note</button>
+    <div style="height:8px"></div>
+  `;
+  showModal();
+}
+
+function openDayNoteModal(ds){
+  const day=calD[ds]||{};
+  const d=new Date(ds+'T12:00:00');
+  document.getElementById('m-title').textContent='📝 '+d.toLocaleDateString('en',{weekday:'long',month:'short',day:'numeric'});
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg">
+      <label class="fl">Day Note</label>
+      <textarea class="fta" id="day-note-in" placeholder="e.g. Family dinner, date night, meal prep day...">${esc(day.note||'')}</textarea>
+    </div>
+    ${day.note?`<button class="btn btn-d btn-full" onclick="saveDNote('${ds}',null);closeModal()" style="margin-bottom:10px">🗑️ Remove Note</button>`:''}
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" onclick="saveDayNote('${ds}')" style="flex:1">Save Note</button>
+    </div>
+    <div style="height:8px"></div>
+  `;
+  showModal();
+  setTimeout(()=>document.getElementById('day-note-in')?.focus(),300);
+}
+
+function saveDayNote(ds){
+  const val=document.getElementById('day-note-in')?.value.trim()||'';
+  saveDNote(ds,val||null);
+  closeModal();
+}
+
+// ============================================================
+// RECIPES
+// ============================================================
+function renderRecipes(){
+  const el=document.getElementById('r-body');
+  el.innerHTML=`
+    <div class="rtabs">
+      <button class="rtab ${rTab==='recipes'?'active':''}" onclick="setRTab('recipes')">📖 Recipes</button>
+      <button class="rtab ${rTab==='ideas'?'active':''}" onclick="setRTab('ideas')">💡 Meal Ideas</button>
+    </div>
+    <div id="r-tab-body"></div>
+  `;
+  renderRTab();
+}
+function setRTab(t){rTab=t;renderRecipes();}
+
+function renderRTab(){
+  const el=document.getElementById('r-tab-body');if(!el)return;
+  if(rTab==='recipes'){
+    const all=Object.entries(recipes);
+    const filtered=all.filter(([,r])=>{
+      if(rFilt==='favorites')return r.favorite;
+      if(rFilt==='bakery')return r.bakeryMode;
+      return rFilt==='all'||r.category===rFilt;
+    });
+    el.innerHTML=`
+      <div class="fbar">
+        <button class="fchip ${rFilt==='all'?'active':''}" onclick="setFilt('all')">All (${all.length})</button>
+        <button class="fchip ${rFilt==='favorites'?'active':''}" onclick="setFilt('favorites')">❤️ Favorites</button>
+        <button class="fchip ${rFilt==='bakery'?'active':''}" onclick="setFilt('bakery')">🏪 Bakery</button>
+        ${CATS.map(c=>{const n=all.filter(([,r])=>r.category===c.id).length;return n>0?`<button class="fchip ${rFilt===c.id?'active':''}" onclick="setFilt('${c.id}')">${c.emoji} ${c.label}</button>`:''}).join('')}
+      </div>
+      ${filtered.length
+        ?`<div class="shdr"><span class="stitle">My Recipes</span><span style="font-size:13px;color:var(--mut)">${filtered.length} recipe${filtered.length!==1?'s':''}</span></div>
+          <div class="rgrid">${filtered.map(([id,r])=>rCardHtml(id,r)).join('')}</div>
+          <div style="height:16px"></div>`
+        :`<div class="empty"><div class="ei">${rFilt==='favorites'?'💗':rFilt==='all'?'📖':CM[rFilt]?.emoji||'📖'}</div><p>${rFilt==='favorites'?'No favorites yet.<br>Tap ♡ on any recipe!':'No recipes yet.<br>Tap + to add your first one!'}</p></div>`
+      }
+    `;
+  } else {
+    const ideaList=Object.entries(ideas);
+    el.innerHTML=`
+      <div class="shdr"><span class="stitle">Meal Ideas</span><span style="font-size:13px;color:var(--mut)">${ideaList.length} idea${ideaList.length!==1?'s':''}</span></div>
+      ${ideaList.length
+        ?`<div class="idea-grid">${ideaList.map(([id,idea])=>ideaCardHtml(id,idea)).join('')}</div><div style="height:16px"></div>`
+        :`<div class="empty"><div class="ei">💡</div><p>No ideas yet.<br>Tap + to capture a meal idea!</p></div>`
+      }
+    `;
+  }
+}
+
+function setFilt(f){rFilt=f;renderRTab();}
+
+function rCardHtml(id,r){
+  const c=CM[r.category];
+  return `<div class="rcard" onclick="openRecipeDetail('${id}')">
+    <button class="heart-btn" onclick="toggleFav(event,'${id}')">${r.favorite?'❤️':'🤍'}</button>
+    ${r.photoURL?`<img class="rcard-img" src="${r.photoURL}" loading="lazy">`:`<div class="rcard-ph">${c?c.emoji:'🍽️'}</div>`}
+    <div class="rcard-body">
+      <div class="rcard-name">${esc(r.name)}</div>
+      ${c?`<span class="pill ${c.cls}">${c.emoji} ${c.label}</span>`:''}
+      ${r.regularRotation?`<div class="rot-badge">⭐ Regular rotation</div>`:''}
+    </div>
+  </div>`;
+}
+
+function ideaCardHtml(id,idea){
+  return `<div class="idea-card" onclick="openIdeaDetail('${id}')">
+    ${idea.photoURL?`<img class="idea-card-img" src="${idea.photoURL}" loading="lazy">`:`<div class="idea-card-ph">💡</div>`}
+    <div class="idea-card-body"><div class="idea-card-name">${esc(idea.name)}</div></div>
+  </div>`;
+}
+
+function toggleFav(e,id){
+  e.stopPropagation();
+  db.ref('/recipes/'+id+'/favorite').set(!recipes[id]?.favorite);
+}
+
+// ============================================================
+// RECIPE DETAIL
+// ============================================================
+function openRecipeDetail(id){
+  const r=recipes[id];if(!r)return;
+  const c=CM[r.category];
+  const base=r.servings||4;
+  document.getElementById('m-title').textContent=r.name;
+  document.getElementById('m-body').innerHTML=`
+    ${r.photoURL?`<img class="r-det-img" src="${r.photoURL}">`:''}
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+      ${c?`<span class="pill ${c.cls}">${c.emoji} ${c.label}</span>`:'<span></span>'}
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-s btn-sm" onclick="openRecipeForm('${id}')">✏️ Edit</button>
+        <button class="btn btn-d btn-sm" onclick="confirmDel('${id}')">🗑️</button>
+      </div>
+    </div>
+    ${r.ingredients&&r.ingredients.length?`
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span class="sub-h" style="margin:0">Ingredients</span>
+        <div class="sv-ctr">
+          <button class="sv-btn" onclick="adjDetServ('${id}',-1)">−</button>
+          <span class="sv-num" id="det-sv" data-base="${base}">${base}</span>
+          <span style="font-size:13px;color:var(--mut)">servings</span>
+          <button class="sv-btn" onclick="adjDetServ('${id}',1)">+</button>
+        </div>
+      </div>
+      <ul style="list-style:none" id="det-ing">
+        ${r.ingredients.map(i=>`<li style="padding:8px 0;border-bottom:1px solid var(--bor);display:flex;justify-content:space-between;font-size:15px"><span>${esc(i.name)}</span><span style="color:var(--mut)">${esc(i.qty||'')}</span></li>`).join('')}
+      </ul>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-ok" onclick="openAddToShop('${id}')" style="flex:1">🛒 Add to Shopping</button>
+        <button class="btn btn-p" onclick="openAddToCal('${id}')" style="flex:1">🗓️ Add to Calendar</button>
+      </div>
+    `:`<button class="btn btn-p btn-full" style="margin-bottom:14px" onclick="openAddToCal('${id}')">🗓️ Add to Calendar</button>`}
+    ${r.steps&&r.steps.length?`
+      <span class="sub-h">Steps</span>
+      <ol style="list-style:none;padding:0;margin-bottom:16px" id="det-steps">
+        ${r.steps.map((s,i)=>`<li class="det-step" onclick="togStep(this)" data-done="0" style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--bor);cursor:pointer">
+          <span class="step-num" data-num="${i+1}" style="min-width:26px;height:26px;border-radius:50%;background:var(--bor);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--mut);flex-shrink:0">${i+1}</span>
+          <span class="step-text" style="flex:1;font-size:15px;line-height:1.5;padding-top:3px">${esc(s)}</span>
+        </li>`).join('')}
+      </ol>
+    `:''}
+    ${r.notes?`<span class="sub-h">Notes</span><p style="font-size:15px;line-height:1.6;white-space:pre-wrap;color:var(--txt)">${esc(r.notes)}</p>`:''}
+    <div style="height:8px"></div>
+  `;
+  showModal();
+}
+
+function adjDetServ(id,delta){
+  const el=document.getElementById('det-sv');if(!el)return;
+  const base=parseInt(el.dataset.base)||4;
+  const nxt=Math.max(1,(parseInt(el.textContent)||base)+delta);
+  el.textContent=nxt;
+  const r=recipes[id];if(!r||!r.ingredients)return;
+  const factor=nxt/base;
+  document.getElementById('det-ing').innerHTML=r.ingredients.map(i=>`
+    <li style="padding:8px 0;border-bottom:1px solid var(--bor);display:flex;justify-content:space-between;font-size:15px">
+      <span>${esc(i.name)}</span><span style="color:var(--mut)">${esc(scaleQ(i.qty,factor))}</span>
+    </li>`).join('');
+}
+
+function openAddToCal(id){
+  calPickRid=id;calPickStep=1;calPickDs=null;
+  const dates=getWeekDates(0);
+  const today=fmtD(new Date());
+  document.getElementById('m-title').textContent='🗓️ Add to Calendar';
+  document.getElementById('m-body').innerHTML=`
+    <p style="font-size:13px;color:var(--mut);margin-bottom:12px">Which day?</p>
+    <div class="day-pick-grid">
+      ${dates.map(ds=>{
+        const d=new Date(ds+'T12:00:00');
+        const isT=ds===today;
+        return `<button class="day-pick-btn ${isT?'today-d':''}" onclick="calPickDay('${ds}')" data-ds="${ds}">
+          <div>${d.toLocaleDateString('en',{weekday:'short'})}</div>
+          <div style="font-size:11px;opacity:.7">${d.toLocaleDateString('en',{month:'short',day:'numeric'})}</div>
+        </button>`;
+      }).join('')}
+      <button class="day-pick-btn" onclick="calPickDay('${fmtD(addDays(new Date(dates[6]+'T12:00:00'),1))}')"><div>Next</div><div style="font-size:11px;opacity:.7">week +</div></button>
+    </div>
+    <div style="height:8px"></div>
+  `;
+  showModal();
+}
+
+function calPickDay(ds){
+  calPickDs=ds;
+  document.querySelectorAll('.day-pick-btn').forEach(b=>b.classList.toggle('sel',b.dataset.ds===ds));
+  const d=new Date(ds+'T12:00:00');
+  document.getElementById('m-title').textContent='🗓️ '+d.toLocaleDateString('en',{weekday:'long',month:'short',day:'numeric'});
+  document.getElementById('m-body').innerHTML=`
+    <p style="font-size:13px;color:var(--mut);margin-bottom:12px">Which meal?</p>
+    <div class="slot-pick-grid">
+      ${SLOTS.map(s=>`<button class="slot-pick-btn" onclick="calPickSlot('${s.id}')">${s.label}</button>`).join('')}
+    </div>
+    <button class="btn btn-s btn-full" onclick="openAddToCal('${calPickRid}')" style="margin-top:10px">← Back</button>
+    <div style="height:8px"></div>
+  `;
+}
+
+function calPickSlot(slot){
+  if(!calPickDs||!calPickRid)return;
+  db.ref('/calendar/'+calPickDs+'/'+slot).set(calPickRid);
+  closeModal();
+}
+
+// ============================================================
+// RECIPE FORM
+// ============================================================
+function openRecipeForm(id){
+  editingRid=id;
+  const r=id?recipes[id]:null;
+  pendingPhoto=null;rFormCat=r?r.category:null;rFormServ=r?(r.servings||4):4;
+  document.getElementById('m-title').textContent=r?'Edit Recipe':'New Recipe';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg">
+      <label class="fl">Photo</label>
+      <div class="pzone" id="pzone">
+        ${r&&r.photoURL?`<img src="${r.photoURL}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div class="pzone-hint">📷 Tap to add photo from camera roll</div>`}
+        <input type="file" accept="image/*" onchange="handlePhoto(event)">
+      </div>
+      <div class="upwrap" id="upwrap"><div class="upbar" id="upbar"></div></div>
+    </div>
+    <div class="fg"><label class="fl">Recipe Name *</label><input type="text" class="fi" id="rn" placeholder="e.g. Classic Sourdough Loaf" value="${r?esc(r.name):''}"></div>
+    <div class="fg">
+      <label class="fl">Category *</label>
+      <div class="cat-grid" id="cgrid">${CATS.map(c=>`<button class="catb ${rFormCat===c.id?'sel':''}" onclick="selCat('${c.id}')">${c.emoji} ${c.label}</button>`).join('')}</div>
+    </div>
+    <div class="fg">
+      <label class="fl">Servings</label>
+      <div class="sv-ctr">
+        <button class="sv-btn" onclick="adjFServ(-1)">−</button>
+        <span class="sv-num" id="fsv">${rFormServ}</span>
+        <span style="font-size:13px;color:var(--mut)">servings</span>
+        <button class="sv-btn" onclick="adjFServ(1)">+</button>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Ingredients</label>
+      <div id="ilist"></div>
+      <button class="btn btn-s btn-sm" onclick="addIR()" style="margin-top:6px">+ Add Ingredient</button>
+    </div>
+    <div class="fg">
+      <label class="fl">Steps</label>
+      <div id="slist"></div>
+      <button class="btn btn-s btn-sm" onclick="addStep()" style="margin-top:6px">+ Add Step</button>
+    </div>
+    <div class="fg"><label class="fl">Notes</label><textarea class="fta" id="rnotes" placeholder="Tips, temperature, timing...">${r?esc(r.notes||''):''}</textarea></div>
+    <div class="fg" style="display:flex;align-items:center;gap:10px">
+      <input type="checkbox" id="rrot" ${r&&r.regularRotation?'checked':''} style="width:20px;height:20px;accent-color:var(--acc)">
+      <label for="rrot" style="font-size:14px;font-weight:700;color:var(--txt);cursor:pointer">⭐ Regular rotation</label>
+    </div>
+    <div class="fg" style="display:flex;align-items:center;gap:10px">
+      <input type="checkbox" id="rbakery" ${r&&r.bakeryMode?'checked':''} style="width:20px;height:20px;accent-color:var(--acc)">
+      <label for="rbakery" style="font-size:14px;font-weight:700;color:var(--txt);cursor:pointer">🏪 Bakery mode</label>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px;padding-bottom:8px">
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" id="sbtn" onclick="saveRF()" style="flex:1">Save Recipe</button>
+    </div>
+  `;
+  const ings=r&&r.ingredients?r.ingredients:[];
+  ings.forEach(i=>addIR(i.qty,i.name));
+  if(!ings.length)addIR('','');
+  const steps=r&&r.steps?r.steps:[];
+  steps.forEach(s=>addStep(s));
+  showModal();
+}
+
+function selCat(id){
+  rFormCat=id;
+  document.getElementById('cgrid').innerHTML=CATS.map(c=>`<button class="catb ${rFormCat===c.id?'sel':''}" onclick="selCat('${c.id}')">${c.emoji} ${c.label}</button>`).join('');
+}
+function adjFServ(d){rFormServ=Math.max(1,rFormServ+d);const el=document.getElementById('fsv');if(el)el.textContent=rFormServ;}
+function handlePhoto(e){
+  const file=e.target.files[0];if(!file)return;
+  pendingPhoto=file;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const zone=document.getElementById('pzone');
+    const inp=zone.querySelector('input');
+    zone.innerHTML='';
+    const img=document.createElement('img');
+    img.src=ev.target.result;
+    img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none';
+    zone.appendChild(img);if(inp)zone.appendChild(inp);
+  };
+  reader.readAsDataURL(file);
+}
+function addIR(qty='',name=''){
+  const list=document.getElementById('ilist');
+  const row=document.createElement('div');
+  row.className='ir';
+  row.innerHTML=`
+    <input type="text" class="iq" placeholder="Qty" value="${esc(qty)}" style="width:82px;flex-shrink:0;padding:10px 10px;border:1.5px solid var(--bor);border-radius:8px;font-size:14px;background:var(--sur);color:var(--txt)">
+    <input type="text" class="in" placeholder="Ingredient" value="${esc(name)}" style="flex:1;padding:10px 10px;border:1.5px solid var(--bor);border-radius:8px;font-size:14px;background:var(--sur);color:var(--txt)">
+    <button class="del-ir" onclick="this.parentElement.remove()">×</button>
+  `;
+  list.appendChild(row);
+}
+async function saveRF(){
+  const name=document.getElementById('rn').value.trim();
+  if(!name){alert('Please enter a recipe name.');return;}
+  if(!rFormCat){alert('Please select a category.');return;}
+  const notes=document.getElementById('rnotes').value.trim();
+  const rot=document.getElementById('rrot').checked;
+  const bakeryMode=document.getElementById('rbakery')?.checked||false;
+  const ingredients=[];
+  document.querySelectorAll('#ilist .ir').forEach(row=>{
+    const q=row.querySelector('.iq').value.trim();
+    const n=row.querySelector('.in').value.trim();
+    if(n)ingredients.push({qty:q,name:n});
+  });
+  const steps=[];
+  document.querySelectorAll('#slist .step-row').forEach(row=>{
+    const v=row.querySelector('.step-in').value.trim();
+    if(v)steps.push(v);
+  });
+  const rid=editingRid||('r_'+Date.now());
+  let photoURL=(editingRid&&recipes[editingRid]?.photoURL)||null;
+  if(pendingPhoto){
+    const btn=document.getElementById('sbtn');if(btn)btn.textContent='Uploading...';
+    document.getElementById('upwrap').style.display='block';
+    try{
+      const blob=await compressImg(pendingPhoto,900,.82);
+      const ref=storage.ref('recipes/'+rid+'/photo.jpg');
+      const task=ref.put(blob,{contentType:'image/jpeg'});
+      task.on('state_changed',snap=>{document.getElementById('upbar').style.width=(snap.bytesTransferred/snap.totalBytes*100)+'%';});
+      await task;photoURL=await ref.getDownloadURL();
+    }catch(err){console.error(err);alert('Photo upload failed — saved without photo.');}
+    pendingPhoto=null;
+  }
+  const data={name,category:rFormCat,notes,steps,ingredients,servings:rFormServ,regularRotation:rot,bakeryMode,favorite:!!(editingRid&&recipes[editingRid]?.favorite),photoURL:photoURL||null,updatedAt:new Date().toISOString()};
+  if(!editingRid)data.createdAt=new Date().toISOString();
+  await db.ref('/recipes/'+rid).update(data);
+  closeModal();
+}
+function confirmDel(id){
+  if(!confirm('Delete "'+( recipes[id]?.name||'this recipe')+'"?\nCannot be undone.'))return;
+  db.ref('/recipes/'+id).remove();closeModal();
+}
+function addStep(text=''){
+  const list=document.getElementById('slist');if(!list)return;
+  const idx=list.children.length+1;
+  const row=document.createElement('div');
+  row.className='ir step-row';
+  row.innerHTML=`<span class="step-num-lbl" style="width:22px;font-size:13px;font-weight:700;color:var(--mut);flex-shrink:0;text-align:center">${idx}</span>
+    <input type="text" class="step-in" placeholder="Step ${idx}…" value="${esc(text)}" style="flex:1;padding:10px;border:1.5px solid var(--bor);border-radius:8px;font-size:14px;background:var(--sur);color:var(--txt)">
+    <button class="del-ir" onclick="this.parentElement.remove();renumSteps()">×</button>`;
+  list.appendChild(row);
+}
+function renumSteps(){
+  document.querySelectorAll('#slist .step-row').forEach((row,i)=>{
+    const lbl=row.querySelector('.step-num-lbl');
+    const inp=row.querySelector('.step-in');
+    if(lbl)lbl.textContent=i+1;
+    if(inp)inp.placeholder='Step '+(i+1)+'…';
+  });
+}
+function togStep(el){
+  const done=el.dataset.done==='1';
+  el.dataset.done=done?'0':'1';
+  const circle=el.querySelector('.step-num');
+  const text=el.querySelector('.step-text');
+  if(circle){circle.style.background=done?'var(--bor)':'var(--ok)';circle.style.color=done?'var(--mut)':'#fff';circle.textContent=done?circle.dataset.num:'✓';}
+  if(text){text.style.textDecoration=done?'none':'line-through';text.style.color=done?'var(--txt)':'var(--mut)';}
+}
+
+// ============================================================
+// IDEAS
+// ============================================================
+function openIdeaForm(id){
+  const idea=id?ideas[id]:null;
+  pendingPhoto=null;
+  document.getElementById('m-title').textContent=idea?'Edit Idea':'New Meal Idea';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg">
+      <label class="fl">Photo (optional)</label>
+      <div class="pzone" id="pzone">
+        ${idea&&idea.photoURL?`<img src="${idea.photoURL}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:`<div class="pzone-hint">📷 Add a photo of inspiration</div>`}
+        <input type="file" accept="image/*" onchange="handlePhoto(event)">
+      </div>
+      <div class="upwrap" id="upwrap"><div class="upbar" id="upbar"></div></div>
+    </div>
+    <div class="fg"><label class="fl">Idea Name *</label><input type="text" class="fi" id="idea-name" placeholder="e.g. Thai basil chicken" value="${idea?esc(idea.name):''}"></div>
+    <div class="fg"><label class="fl">Notes</label><textarea class="fta" id="idea-notes" placeholder="Rough notes, where you saw it...">${idea?esc(idea.notes||''):''}</textarea></div>
+    <div style="display:flex;gap:8px;margin-top:8px;padding-bottom:8px">
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" id="sbtn" onclick="saveIdea('${id||''}')" style="flex:1">Save Idea</button>
+    </div>
+  `;
+  showModal();
+}
+
+async function saveIdea(id){
+  const name=document.getElementById('idea-name').value.trim();
+  if(!name){alert('Enter an idea name.');return;}
+  const notes=document.getElementById('idea-notes').value.trim();
+  const iid=id||('idea_'+Date.now());
+  let photoURL=(id&&ideas[id]?.photoURL)||null;
+  if(pendingPhoto){
+    const btn=document.getElementById('sbtn');if(btn)btn.textContent='Uploading...';
+    document.getElementById('upwrap').style.display='block';
+    try{
+      const blob=await compressImg(pendingPhoto,900,.82);
+      const ref=storage.ref('ideas/'+iid+'/photo.jpg');
+      const task=ref.put(blob,{contentType:'image/jpeg'});
+      task.on('state_changed',snap=>{document.getElementById('upbar').style.width=(snap.bytesTransferred/snap.totalBytes*100)+'%';});
+      await task;photoURL=await ref.getDownloadURL();
+    }catch(err){console.error(err);}
+    pendingPhoto=null;
+  }
+  await db.ref('/ideas/'+iid).update({name,notes,photoURL:photoURL||null,updatedAt:new Date().toISOString()});
+  closeModal();
+}
+
+function openIdeaDetail(id){
+  const idea=ideas[id];if(!idea)return;
+  document.getElementById('m-title').textContent=idea.name;
+  document.getElementById('m-body').innerHTML=`
+    ${idea.photoURL?`<img class="r-det-img" src="${idea.photoURL}">`:''}
+    ${idea.notes?`<p style="font-size:15px;line-height:1.6;color:var(--txt);margin-bottom:16px">${esc(idea.notes)}</p>`:''}
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button class="btn btn-p" onclick="promoteIdea('${id}')" style="flex:1">✨ Promote to Recipe</button>
+      <button class="btn btn-s btn-sm" onclick="openIdeaForm('${id}')">✏️ Edit</button>
+      <button class="btn btn-d btn-sm" onclick="deleteIdea('${id}')">🗑️</button>
+    </div>
+  `;
+  showModal();
+}
+
+function promoteIdea(id){
+  const idea=ideas[id];if(!idea)return;
+  closeModal();
+  editingRid=null;pendingPhoto=null;rFormCat=null;rFormServ=4;
+  setTimeout(()=>{
+    openRecipeForm(null);
+    setTimeout(()=>{
+      const el=document.getElementById('rn');
+      if(el)el.value=idea.name;
+      const notesEl=document.getElementById('rnotes');
+      if(notesEl&&idea.notes)notesEl.value=idea.notes;
+    },50);
+  },300);
+}
+
+function deleteIdea(id){
+  if(!confirm('Delete this idea?'))return;
+  db.ref('/ideas/'+id).remove();closeModal();
+}
+
+// ============================================================
+// CALENDAR
+// ============================================================
+function renderCalendar(){
+  if(calDayDetail){renderDayDetail(calDayDetail);return;}
+  const el=document.getElementById('c-body');
+  const now=new Date();
+  const firstDay=new Date(calYear,calMonth,1);
+  const lastDay=new Date(calYear,calMonth+1,0);
+  const monthName=firstDay.toLocaleDateString('en',{month:'long',year:'numeric'});
+  const startDow=firstDay.getDay();
+  const totalDays=lastDay.getDate();
+  const todayStr=fmtD(now);
+  const numRows=Math.ceil((startDow+totalDays)/7);
+
+  let cells='';
+  for(let i=0;i<startDow;i++) cells+=`<div style="min-height:0"></div>`;
+  for(let d=1;d<=totalDays;d++){
+    const ds=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const day=calD[ds]||{};
+    const isToday=ds===todayStr;
+    const hasBake=!!day.sourdough;
+    cells+=`<div onclick="openDayDetail('${ds}')" style="min-height:0;border-radius:8px;padding:5px;cursor:pointer;background:${isToday?'var(--acc)':'var(--sur)'};border:${isToday?'none':'1px solid var(--bor)'};box-shadow:${isToday?'0 2px 8px rgba(200,84,128,.3)':'none'}">
+      <div style="font-size:12px;font-weight:700;color:${isToday?'#fff':'var(--pri)'};margin-bottom:3px">${d}</div>
+      ${hasBake?`<div style="font-size:9px;background:${isToday?'rgba(255,255,255,.3)':'#FFF3E8'};color:${isToday?'#fff':'#8B4513'};padding:1px 3px;border-radius:3px;margin-bottom:1px">${day.sourdough.emoji}</div>`:''}
+      ${SLOTS.filter(s=>day[s.id]).slice(0,2).map(s=>{const m=getMealDisplay(day[s.id]);return m?`<div style="font-size:9px;color:${isToday?'#fff':'var(--acc)'};font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name.split(' ')[0]}</div>`:''}).join('')}
+      ${day.note?`<div style="font-size:8px;color:${isToday?'rgba(255,255,255,.8)':'var(--mut)'};margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic">${esc(day.note)}</div>`:''}
+    </div>`;
+  }
+
+  el.innerHTML=`
+    <div style="background:var(--pri);padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+      <button style="width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,.2);font-size:20px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center" onclick="chMonth(-1)">‹</button>
+      <span style="font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:#fff">${monthName}</span>
+      <button style="width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,.2);font-size:20px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center" onclick="chMonth(1)">›</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--pri);padding:4px 8px 8px">
+      ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div style="text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.7);padding:4px 0">${d}</div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(${numRows},1fr);gap:3px;padding:8px;background:var(--bg);flex:1;overflow:hidden">${cells}</div>
+  `;
+}
+
+function chMonth(delta){
+  calMonth+=delta;
+  if(calMonth>11){calMonth=0;calYear++;}
+  if(calMonth<0){calMonth=11;calYear--;}
+  renderCalendar();
+}
+
+function openDayDetail(ds){calDayDetail=ds;renderDayDetail(ds);}
+
+function renderDayDetail(ds){
+  const el=document.getElementById('c-body');
+  const d=new Date(ds+'T12:00:00');
+  const isT=ds===fmtD(new Date());
+  const day=calD[ds]||{};
+  const sd=day.sourdough;
+
+  const slotsHtml=SLOTS.map(slot=>{
+    const slotVal=day[slot.id];
+    const meal=getMealDisplay(slotVal);
+    return `<div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bor);gap:10px">
+      <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);width:72px;flex-shrink:0">${slot.label}</span>
+      ${meal
+        ?`<span style="flex:1;font-size:15px;font-weight:700;color:${meal.isCustom?'var(--mut)':'var(--txt)'};font-style:${meal.isCustom?'italic':'normal'};cursor:pointer" onclick="openSlotPicker('${ds}','${slot.id}',true)">${esc(meal.name)}</span>
+          <button onclick="openSlotPicker('${ds}','${slot.id}',true)" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--mut)">✏️</button>
+          <button onclick="rmSlot('${ds}','${slot.id}')" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--mut)">×</button>`
+        :`<span style="flex:1;font-size:13px;color:var(--bor);font-style:italic">—</span>
+          <button onclick="openSlotPicker('${ds}','${slot.id}',false)" style="width:30px;height:30px;border-radius:50%;border:1.5px dashed var(--bor);background:none;font-size:18px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>`
+      }
+    </div>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div style="background:linear-gradient(135deg,var(--pri),var(--acc));color:#fff;padding:16px;display:flex;align-items:center;gap:12px">
+      <button onclick="closeDayDetail()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;padding:8px 12px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">‹</button>
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:700">${d.toLocaleDateString('en',{weekday:'long',month:'long',day:'numeric'})}</div>
+        ${isT?`<div style="font-size:12px;opacity:.85;margin-top:2px">✨ Today</div>`:''}
+      </div>
+    </div>
+    ${sd?`<div style="padding:12px 16px;background:#FFF3E8;border-bottom:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:14px;font-weight:700;color:#8B4513">${sd.emoji} ${sd.label}</span>
+      <button onclick="rmBakeStep('${ds}')" style="background:none;border:none;font-size:14px;cursor:pointer;color:#8B4513">🗑️ Remove</button>
+    </div>`:''}
+    <div style="background:var(--sur);overflow-y:auto;flex:1">
+      ${slotsHtml}
+      <div style="padding:12px 16px;border-bottom:1px solid var(--bor)">
+        <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);margin-bottom:6px">Day Note</label>
+        <input type="text" style="width:100%;padding:9px 12px;border:1.5px solid var(--bor);border-radius:8px;font-size:14px;background:var(--bg);color:var(--txt)" placeholder="📝 Notes..." value="${esc(day.note||'')}" onchange="saveDNote('${ds}',this.value)">
+      </div>
+    </div>
+    <div style="height:16px"></div>
+  `;
+}
+
+function closeDayDetail(){calDayDetail=null;renderCalendar();}
+function rmBakeStep(ds){
+  if(!confirm('Remove this bake step from this day?'))return;
+  db.ref('/calendar/'+ds+'/sourdough').remove();
+  if(calDayDetail)renderDayDetail(ds);
+}
+function saveDNote(ds,v){db.ref('/calendar/'+ds+'/note').set(v||null);}
+function rmSlot(ds,slot){db.ref('/calendar/'+ds+'/'+slot).remove();}
+
+function getMealDisplay(v){
+  if(!v)return null;
+  if(String(v).startsWith('custom:'))return{name:v.slice(7),isCustom:true,id:null};
+  const r=recipes[v];
+  if(r)return{name:r.name,isCustom:false,id:v};
+  if(String(v).startsWith('r_'))return{name:'Loading...',isCustom:false,id:v};
+  return null;
+}
+
+function openSlotPicker(ds,slot,isEdit){
+  const slotDef=SLOTS.find(s=>s.id===slot);
+  const allowed=slotDef?slotDef.cats:[];
+  const filtered=Object.entries(recipes).filter(([,r])=>allowed.includes(r.category));
+  const customVal=(isEdit&&String(calD[ds]?.[slot]||'').startsWith('custom:'))?calD[ds][slot].slice(7):'';
+  document.getElementById('m-title').textContent='Add to '+(slotDef?.label||slot);
+  document.getElementById('m-body').innerHTML=`
+    <div style="margin-bottom:16px">
+      <label class="fl">Quick add — type anything</label>
+      <div style="display:flex;gap:8px">
+        <input type="text" class="fi" id="custom-meal-in" placeholder="e.g. Eating out, Pizza night, Leftovers..." value="${esc(customVal)}" style="flex:1;font-size:15px">
+        <button class="btn btn-p" onclick="addCustomMeal('${ds}','${slot}')">Add</button>
+      </div>
+    </div>
+    ${isEdit?`<button class="btn btn-d btn-full" onclick="rmSlot('${ds}','${slot}')" style="margin-bottom:14px">🗑️ Remove this meal</button>`:''}
+    <div style="border-top:1px solid var(--bor);padding-top:14px">
+      <p class="fl" style="margin-bottom:10px">Or choose from your recipes:</p>
+      ${filtered.length
+        ?`<div>${filtered.map(([id,r])=>{
+            const c=CM[r.category];
+            return `<div class="picker-item" onclick="assignSlot('${ds}','${slot}','${id}')">
+              ${r.photoURL?`<img class="picker-th" src="${r.photoURL}" loading="lazy">`:`<div class="picker-ph">${c?.emoji||'🍽️'}</div>`}
+              <div>
+                <div style="font-weight:700;font-size:15px;color:var(--txt)">${esc(r.name)}</div>
+                ${c?`<span class="pill ${c.cls}">${c.emoji} ${c.label}</span>`:''}
+              </div>
+            </div>`;
+          }).join('')}</div>`
+        :`<div style="text-align:center;color:var(--mut);font-size:14px;padding:12px 0">No ${allowed.join(' or ')} recipes yet — use quick add above!</div>`
+      }
+    </div>
+    <div style="height:8px"></div>
+  `;
+  showModal();
+}
+
+function addCustomMeal(ds,slot){
+  const el=document.getElementById('custom-meal-in');
+  const val=el?el.value.trim():'';
+  if(!val){alert('Type a meal name first.');return;}
+  db.ref('/calendar/'+ds+'/'+slot).set('custom:'+val);
+  closeModal();
+}
+function assignSlot(ds,slot,rid){db.ref('/calendar/'+ds+'/'+slot).set(rid);closeModal();}
+
+// ============================================================
+// GROCERY — Firebase-backed, syncs across all devices
+// ============================================================
+
+// ✅ NEW: Check for localStorage data that needs migrating and show a banner
+function getMigrationBanner(){
+  try{
+    const raw=localStorage.getItem('kob_gstores');
+    if(!raw)return'';
+    const stores=JSON.parse(raw);
+    if(!stores||!stores.length)return'';
+    return `<div class="migrate-banner">
+      <div class="migrate-banner-title">📱 Local stores found on this device!</div>
+      <div class="migrate-banner-sub">
+        ${stores.length} store${stores.length!==1?'s were':' was'} saved only on this phone/browser and
+        ${stores.length!==1?'aren\'t':'isn\'t'} visible to anyone else. Tap below to upload
+        ${stores.length!==1?'them':'it'} to the shared cloud so all devices stay in sync.
+      </div>
+      <button class="migrate-banner-btn" onclick="migrateLocalStores()">
+        ☁️ Upload ${stores.length} store${stores.length!==1?'s':''} to shared list
+      </button>
+    </div>`;
+  }catch(e){return'';}
+}
+
+// ✅ NEW: One-tap migration — reads localStorage, writes to Firebase, clears local copy
+function migrateLocalStores(){
+  const raw=localStorage.getItem('kob_gstores');
+  if(!raw){alert('No local stores found to migrate.');return;}
+  let stores;
+  try{stores=JSON.parse(raw);}catch(e){alert('Could not read local data.');return;}
+  if(!stores||!stores.length){localStorage.removeItem('kob_gstores');renderGrocery();return;}
+
+  // Map TODO_COLORS → GLIST_COLORS (best match)
+  const colorMap={pink:'pink',rose:'pink',purple:'purple',blue:'blue',teal:'teal',green:'green'};
+
+  const writes=stores.map(store=>{
+    const fbColor=colorMap[store.color]||'pink';
+    const items=(store.items||[]).map(item=>({
+      name:item.name||'',
+      qty:item.qty||'',
+      checked:item.checked||false
+    }));
+    // Preserve original ID so we don't create duplicates if tapped twice
+    const id=store.id||('gl_'+Date.now()+'_'+Math.random().toString(36).slice(2,7));
+    return db.ref('/grocery/lists/'+id).set({
+      name:store.name||'My Store',
+      color:fbColor,
+      emoji:'🛒',
+      items,
+      createdAt:new Date().toISOString(),
+      updatedAt:new Date().toISOString(),
+      pinned:false
+    });
+  });
+
+  Promise.all(writes)
+    .then(()=>{
+      localStorage.removeItem('kob_gstores');
+      alert('✅ Done! '+stores.length+' store'+(stores.length!==1?'s are':' is')+' now synced across all devices.');
+      renderGrocery();
+    })
+    .catch(err=>{
+      console.error('Migration error:',err);
+      alert('Something went wrong uploading. Check your connection and try again.\n\nYour local data is safe — nothing was deleted.');
+    });
+}
+
+function renderGrocery(){
+  const el=document.getElementById("g-body");if(!el)return;
+
+  // Show migration banner if this device has local-only stores
+  const migBanner=getMigrationBanner();
+
+  const lists=Object.entries(groceryLists).sort((a,b)=>{
+    const ap=(a[1].pinned?1:0),bp=(b[1].pinned?1:0);
+    return bp-ap||(b[1].updatedAt||"").localeCompare(a[1].updatedAt||"");
+  });
+
+  if(!lists.length&&!migBanner){
+    el.innerHTML=`
+      <div class="empty" style="padding-top:60px">
+        <div class="ei">🛒</div>
+        <p style="font-size:16px;font-weight:700;color:var(--pri);margin-bottom:8px">No stores yet</p>
+        <p style="font-size:14px;line-height:1.6">Tap <strong style="background:var(--acc);color:#fff;padding:1px 8px;border-radius:6px">+</strong> to add your first store<br><span style="color:var(--mut)">(e.g. Target, Sprouts, Costco...)</span></p>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML=
+    migBanner
+    +lists.map(([id,l])=>groceryStoreSection(id,l)).join("")
+    +"<div style='height:80px'></div>";
+}
+
+function groceryStoreSection(id,l){
+  const c=GLIST_COLORS.find(x=>x.id===l.color)||GLIST_COLORS[3];
+  const items=l.items||[];
+  const unc=items.filter(i=>!i.checked);
+  const chk=items.filter(i=>i.checked);
+  const itemRows=items.map((item,idx)=>inlineItemHtml(item,idx,id,c)).join("");
+  const doneBar=chk.length?`
+    <div class="store-clear-row" style="background:${c.bg}">
+      <span style="font-size:12px;font-weight:700;color:${c.txt};opacity:.7">✓ ${chk.length} done</span>
+      <button onclick="clearGChecked('${id}')" style="font-size:12px;font-weight:700;border:none;background:none;cursor:pointer;color:${c.txt};text-decoration:underline;opacity:.8">Clear done</button>
+    </div>`:"";
+  return `<div class="store-section">
+    <div class="store-header" style="background:${c.txt}">
+      <div class="store-title">${l.emoji||"🛒"} ${esc(l.name)}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="store-count">${unc.length} item${unc.length!==1?"s":""}</span>
+        <button onclick="setTimeout(()=>openEditGListModal('${id}'),50)" style="padding:6px 12px;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.5);border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">✏️ Edit</button>
+        <button class="store-menu-btn" onclick="openStoreMenu('${id}')" style="font-size:13px;letter-spacing:1px;font-weight:700">•••</button>
+      </div>
+    </div>
+    ${itemRows}
+    <div class="store-add-row" style="background:${c.bg}">
+      <input type="text" class="store-add-input" id="qadd-${id}"
+        placeholder="Add item to ${esc(l.name)}..."
+        onkeydown="if(event.key==='Enter')doInlineAdd('${id}')">
+      <button onclick="doInlineAdd('${id}')"
+        style="padding:11px 18px;background:${c.txt};color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0">Add</button>
+    </div>
+    ${doneBar}
+  </div>`;
+}
+
+function inlineItemHtml(item,idx,id,c){
+  const done=item.checked;
+  return `<div class="store-item-row ${done?"done-row":""}">
+    <button class="store-check-btn" onclick="togGItem('${id}',${idx})"
+      style="border-color:${done?c.txt:"var(--bor)"};background:${done?c.txt:"none"}">
+      ${done?"✓":""}
+    </button>
+    <div style="flex:1;min-width:0">
+      <span class="store-item-text ${done?"done":""}">${esc(item.name)}</span>
+      ${item.source?`<div style="font-size:11px;color:var(--mut);margin-top:1px">from ${esc(item.source)}</div>`:""}
+    </div>
+    ${item.qty?`<span class="store-item-qty">${esc(item.qty)}</span>`:""}
+    <button class="store-del-btn" onclick="openEditGItem('${id}',${idx})" title="Edit" style="font-size:13px">✏️</button>
+    <button class="store-del-btn" onclick="delGItem('${id}',${idx})">×</button>
+  </div>`;
+}
+
+function doInlineAdd(id){
+  const el=document.getElementById("qadd-"+id);
+  const name=el?el.value.trim():"";
+  if(!name)return;
+  const l=groceryLists[id];if(!l)return;
+  db.ref("/grocery/lists/"+id+"/items").set([...(l.items||[]),{name,qty:"",checked:false}]);
+  db.ref("/grocery/lists/"+id+"/updatedAt").set(new Date().toISOString());
+  if(el){el.value="";setTimeout(()=>el.focus(),80);}
+}
+
+function togGItem(id,idx){
+  const l=groceryLists[id];if(!l)return;
+  const updated=(l.items||[]).map((item,i)=>i===idx?{...item,checked:!item.checked}:item);
+  db.ref("/grocery/lists/"+id+"/items").set(updated);
+  db.ref("/grocery/lists/"+id+"/updatedAt").set(new Date().toISOString());
+}
+function delGItem(id,idx){
+  const l=groceryLists[id];if(!l)return;
+  db.ref("/grocery/lists/"+id+"/items").set((l.items||[]).filter((_,i)=>i!==idx));
+  db.ref("/grocery/lists/"+id+"/updatedAt").set(new Date().toISOString());
+}
+function openEditGItem(id,idx){
+  const l=groceryLists[id];if(!l)return;
+  const item=(l.items||[])[idx];if(!item)return;
+  document.getElementById('m-title').textContent='✏️ Edit Item';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg"><label class="fl">Item Name</label><input type="text" class="fi" id="ei-name" value="${esc(item.name)}"></div>
+    <div class="fg"><label class="fl">Quantity (optional)</label><input type="text" class="fi" id="ei-qty" placeholder="e.g. 2 lbs, 1 can…" value="${esc(item.qty||'')}"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" onclick="doEditGItem('${id}',${idx})" style="flex:1">Save</button>
+    </div>
+    <div style="height:8px"></div>
+  `;
+  showModal();
+  setTimeout(()=>document.getElementById('ei-name')?.focus(),300);
+}
+function doEditGItem(id,idx){
+  const name=document.getElementById('ei-name')?.value.trim();
+  if(!name){alert('Enter an item name.');return;}
+  const qty=document.getElementById('ei-qty')?.value.trim()||'';
+  const l=groceryLists[id];if(!l)return;
+  const updated=(l.items||[]).map((item,i)=>i===idx?{...item,name,qty}:item);
+  db.ref('/grocery/lists/'+id+'/items').set(updated);
+  db.ref('/grocery/lists/'+id+'/updatedAt').set(new Date().toISOString());
+  closeModal();
+}
+function clearGChecked(id){
+  const l=groceryLists[id];if(!l)return;
+  db.ref("/grocery/lists/"+id+"/items").set((l.items||[]).filter(i=>!i.checked));
+}
+function toggleGPin(id){
+  db.ref("/grocery/lists/"+id+"/pinned").set(!groceryLists[id]?.pinned);
+}
+function deleteGList(id){
+  if(!confirm("Delete this store and all its items? Cannot be undone."))return;
+  db.ref("/grocery/lists/"+id).remove();
+  closeModal();
+}
+
+function openStoreMenu(id){
+  const l=groceryLists[id];if(!l)return;
+  document.getElementById("m-title").textContent=(l.emoji||"🛒")+" "+l.name;
+  document.getElementById("m-body").innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <button class="btn btn-s" onclick="openAddFromRecipeToGList('${id}')">🍽️ From Recipe</button>
+      <button class="btn btn-s" onclick="closeModal();openAddFromListModal('${id}')">📋 From List</button>
+      <button class="btn btn-s" onclick="closeModal();setTimeout(()=>openEditGListModal('${id}'),200)">✏️ Edit</button>
+      <button class="btn btn-s" onclick="toggleGPin('${id}')">${l.pinned?"📌 Unpin":"📍 Pin"}</button>
+    </div>
+    <button class="btn btn-d btn-full" onclick="deleteGList('${id}')">🗑️ Delete ${esc(l.name)}</button>
+    <div style="height:8px"></div>
+  `;
+  showModal();
+}
+
+function openNewGListModal(){
+  newGColor="red";newGEmoji="🛒";
+  document.getElementById("m-title").textContent="🛒 New Store";
+  document.getElementById("m-body").innerHTML=
+    `<p style="font-size:13px;color:var(--mut);margin-bottom:14px">Name your store and pick a color.</p>
+    <div class="fg"><label class="fl">Store Name</label><input type="text" class="fi" id="gl-name" placeholder="e.g. Target, Sprouts, Costco, Trader Joe's..."></div>
+    <div class="fg"><label class="fl">Icon</label><div style="display:flex;flex-wrap:wrap;gap:8px">${GLIST_EMOJIS.map(e=>`<span style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid ${e==="🛒"?"var(--acc)":"transparent"};background:${e==="🛒"?"var(--acc-lt)":"none"}" onclick="pickGEmoji(event,'${e}')">${e}</span>`).join("")}</div></div>
+    <div class="fg">
+      <label class="fl">Color</label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap" id="color-pick-row">
+        ${GLIST_COLORS.map(c=>`<div onclick="pickGColor(event,'${c.id}')" data-cid="${c.id}"
+          style="width:36px;height:36px;border-radius:50%;cursor:pointer;background:${c.txt};border:${c.id===newGColor?"4px solid #333":"2px solid #fff"};box-shadow:0 2px 8px rgba(0,0,0,.2);transition:all .15s"></div>`).join("")}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px"><button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button><button class="btn btn-p" onclick="doNewGList()" style="flex:1">Create Store</button></div>`;
+  showModal();
+  setTimeout(()=>document.getElementById("gl-name")?.focus(),300);
+}
+
+function openEditGListModal(id){
+  const l=groceryLists[id];if(!l)return;
+  newGColor=l.color||"red";newGEmoji=l.emoji||"🛒";
+  document.getElementById("m-title").textContent="✏️ Edit Store";
+  document.getElementById("m-body").innerHTML=
+    `<div class="fg"><label class="fl">Store Name</label><input type="text" class="fi" id="el-name" value="${esc(l.name)}"></div>
+    <div class="fg"><label class="fl">Icon</label><div style="display:flex;flex-wrap:wrap;gap:8px">${GLIST_EMOJIS.map(e=>`<span style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid ${e===newGEmoji?"var(--acc)":"transparent"};background:${e===newGEmoji?"var(--acc-lt)":"none"}" onclick="pickGEmoji(event,'${e}')">${e}</span>`).join("")}</div></div>
+    <div class="fg">
+      <label class="fl">Color</label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap" id="color-pick-row">
+        ${GLIST_COLORS.map(c=>`<div onclick="pickGColor(event,'${c.id}')" data-cid="${c.id}"
+          style="width:36px;height:36px;border-radius:50%;cursor:pointer;background:${c.txt};border:${c.id===newGColor?"4px solid #333":"2px solid #fff"};box-shadow:0 2px 8px rgba(0,0,0,.2);transition:all .15s"></div>`).join("")}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-d btn-sm" onclick="deleteGList('${id}')">🗑️ Delete</button>
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" onclick="doEditGList('${id}')" style="flex:1">Save</button>
+    </div>`;
+  showModal();
+}
+function doEditGList(id){
+  const name=document.getElementById("el-name").value.trim();
+  if(!name){alert("Enter a name.");return;}
+  db.ref("/grocery/lists/"+id).update({name,color:newGColor,emoji:newGEmoji,updatedAt:new Date().toISOString()});
+  closeModal();
+}
+
+function pickGEmoji(e,emoji){
+  newGEmoji=emoji;
+  e.currentTarget.parentElement.querySelectorAll("span").forEach(s=>{s.style.border="2px solid transparent";s.style.background="none";});
+  e.currentTarget.style.border="2px solid var(--acc)";e.currentTarget.style.background="var(--acc-lt)";
+}
+function pickGColor(e,colorId){
+  newGColor=colorId;
+  document.querySelectorAll("#color-pick-row div").forEach(d=>{d.style.border="2px solid #fff";d.style.transform="scale(1)";});
+  e.currentTarget.style.border="4px solid #333";e.currentTarget.style.transform="scale(1.15)";
+}
+function doNewGList(){
+  const name=document.getElementById("gl-name").value.trim();
+  if(!name){alert("Enter a store name.");return;}
+  const id="gl_"+Date.now();
+  db.ref("/grocery/lists/"+id).set({name,color:newGColor,emoji:newGEmoji,items:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),pinned:false});
+  closeModal();
+}
+
+// Add ingredients to shopping list from recipe detail
+function openAddToShop(id){
+  addShopRid=id;
+  const r=recipes[id];if(!r)return;
+  const base=r.servings||4;
+  document.getElementById('m-title').textContent='🛒 Add to Shopping List';
+  const storeOptions=Object.keys(groceryLists).length
+    ?Object.entries(groceryLists).map(([lid,l])=>{
+        const c=GLIST_COLORS.find(x=>x.id===l.color)||GLIST_COLORS[3];
+        return `<button onclick="doAddToShopList('${lid}')"
+          style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:2.5px solid ${c.txt};background:${c.bg};margin-bottom:8px;cursor:pointer;font-weight:700;font-size:15px;color:${c.txt}">
+          <span style="font-size:20px">${l.emoji||'🛒'}</span>${esc(l.name)}
+        </button>`;
+      }).join("")
+    :`<div style="text-align:center;padding:16px 0;color:var(--mut);font-size:14px">
+        No stores yet — <button onclick="closeModal();nav('grocery');setTimeout(openNewGListModal,300)" style="border:none;background:none;color:var(--acc);font-weight:700;font-size:14px;cursor:pointer">create one first</button>
+      </div>`;
+  document.getElementById('m-body').innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <span style="font-weight:700;color:var(--txt)">Servings:</span>
+      <div class="sv-ctr">
+        <button class="sv-btn" onclick="adjAddServ(-1)">−</button>
+        <span class="sv-num" id="add-sv" data-base="${base}">${base}</span>
+        <button class="sv-btn" onclick="adjAddServ(1)">+</button>
+      </div>
+    </div>
+    <div id="add-ing-prev" style="margin-bottom:16px">
+      ${(r.ingredients||[]).map(i=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bor);font-size:14px"><span>${esc(i.name)}</span><span style="color:var(--mut)">${esc(i.qty||'')}</span></div>`).join('')}
+    </div>
+    <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--mut);margin-bottom:10px">Add to store:</p>
+    ${storeOptions}
+    <button class="btn btn-s btn-full" onclick="closeModal()">Cancel</button>
+    <div style="height:8px"></div>
+  `;
+  showModal();
+}
+function adjAddServ(delta){
+  const el=document.getElementById('add-sv');if(!el)return;
+  const base=parseInt(el.dataset.base)||4;
+  const nxt=Math.max(1,(parseInt(el.textContent)||base)+delta);
+  el.textContent=nxt;
+  const r=recipes[addShopRid];if(!r||!r.ingredients)return;
+  const factor=nxt/base;
+  document.getElementById('add-ing-prev').innerHTML=r.ingredients.map(i=>`
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bor);font-size:14px">
+      <span>${esc(i.name)}</span><span style="color:var(--mut)">${esc(scaleQ(i.qty,factor))}</span>
+    </div>`).join('');
+}
+function doAddToShopList(lid){
+  const r=recipes[addShopRid];if(!r)return;
+  const el=document.getElementById('add-sv');
+  const cur=el?parseInt(el.textContent)||r.servings||4:r.servings||4;
+  const factor=cur/(r.servings||4);
+  const ni=(r.ingredients||[]).filter(i=>i.name).map(i=>({name:i.name,qty:scaleQ(i.qty,factor),checked:false,source:r.name}));
+  const l=groceryLists[lid];
+  db.ref('/grocery/lists/'+lid+'/items').set([...(l?.items||[]),...ni]);
+  db.ref('/grocery/lists/'+lid+'/updatedAt').set(new Date().toISOString());
+  closeModal();nav('grocery');
+}
+
+function openAddFromListModal(id){
+  const others=Object.entries(groceryLists).filter(([lid])=>lid!==id);
+  document.getElementById("m-title").textContent="Copy from another store";
+  document.getElementById("m-body").innerHTML=
+    `<p style="font-size:13px;color:var(--mut);margin-bottom:14px">Copy unchecked items from:</p>`
+    +(!others.length?`<div style="text-align:center;color:var(--mut);padding:20px 0">No other stores yet.</div>`
+      :others.map(([lid,l])=>{const c=GLIST_COLORS.find(c=>c.id===l.color)||GLIST_COLORS[3];const unc=(l.items||[]).filter(i=>!i.checked).length;
+        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:1.5px solid ${c.txt};background:${c.bg};cursor:pointer;margin-bottom:8px" onclick="doCopyFromList('${id}','${lid}')"><span style="font-size:24px">${l.emoji||"🛒"}</span><div style="flex:1"><div style="font-weight:700;font-size:15px;color:${c.txt}">${esc(l.name)}</div><div style="font-size:12px;color:${c.txt};opacity:.75">${unc} unchecked items</div></div></div>`;
+      }).join("")
+    )
+    +`<button class="btn btn-s btn-full" onclick="closeModal()" style="margin-top:8px">Cancel</button>`;
+  showModal();
+}
+function doCopyFromList(tId,sId){
+  const src=groceryLists[sId],tgt=groceryLists[tId];if(!src||!tgt)return;
+  const toAdd=(src.items||[]).filter(i=>!i.checked).map(i=>({...i,checked:false,source:src.name}));
+  db.ref("/grocery/lists/"+tId+"/items").set([...(tgt.items||[]),...toAdd]);
+  db.ref("/grocery/lists/"+tId+"/updatedAt").set(new Date().toISOString());
+  closeModal();
+}
+
+function openAddFromRecipeToGList(id){
+  activeGListId=id;
+  document.getElementById("m-title").textContent="🍽️ Add from Recipe";
+  const rlist=Object.entries(recipes);
+  document.getElementById("m-body").innerHTML=
+    `<p style="font-size:13px;color:var(--mut);margin-bottom:12px">Pick a recipe:</p>`
+    +(!rlist.length?`<div class="empty" style="padding:16px 0"><div class="ei">📖</div><p>No recipes yet.</p></div>`
+      :rlist.map(([rid,r])=>{const c=CM[r.category];return `<div class="picker-item" onclick="pickRecipeForGList('${id}','${rid}')">
+        ${r.photoURL?`<img class="picker-th" src="${r.photoURL}" loading="lazy">`:`<div class="picker-ph">${c?.emoji||"🍽️"}</div>`}
+        <div><div style="font-weight:700;font-size:15px">${esc(r.name)}</div>${c?`<span class="pill ${c.cls}">${c.emoji} ${c.label}</span>`:""}</div>
+      </div>`;}).join("")
+    )
+    +`<button class="btn btn-s btn-full" onclick="closeModal()" style="margin-top:8px">Cancel</button>`;
+  showModal();
+}
+function pickRecipeForGList(listId,rid){
+  const r=recipes[rid],l=groceryLists[listId];if(!r||!l)return;const base=r.servings||4;
+  document.getElementById("m-title").textContent="🍽️ "+esc(r.name);
+  document.getElementById("m-body").innerHTML=
+    `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="font-weight:700">Servings:</span><div class="sv-ctr"><button class="sv-btn" onclick="adjRGS(-1,'${rid}','${listId}',${base})">−</button><span class="sv-num" id="rgs-sv" data-base="${base}">${base}</span><button class="sv-btn" onclick="adjRGS(1,'${rid}','${listId}',${base})">+</button></div></div>
+    <div id="rgs-ings">${(r.ingredients||[]).map(i=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bor);font-size:14px"><span>${esc(i.name)}</span><span style="color:var(--mut)">${esc(i.qty||"")}</span></div>`).join("")}</div>
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-s" onclick="openAddFromRecipeToGList('${listId}')" style="flex:1">← Back</button><button class="btn btn-p" onclick="doAddRecipeToGList('${listId}','${rid}')" style="flex:1">Add All</button></div>`;
+  showModal();
+}
+function adjRGS(delta,rid,listId,base){
+  const el=document.getElementById("rgs-sv");if(!el)return;
+  const nxt=Math.max(1,(parseInt(el.textContent)||base)+delta);el.textContent=nxt;
+  const r=recipes[rid];if(!r||!r.ingredients)return;
+  document.getElementById("rgs-ings").innerHTML=r.ingredients.map(i=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bor);font-size:14px"><span>${esc(i.name)}</span><span style="color:var(--mut)">${esc(scaleQ(i.qty,nxt/base))}</span></div>`).join("");
+}
+function doAddRecipeToGList(listId,rid){
+  const r=recipes[rid],l=groceryLists[listId];if(!r||!l)return;
+  const el=document.getElementById("rgs-sv");const cur=el?parseInt(el.textContent)||r.servings||4:r.servings||4;
+  const factor=cur/(r.servings||4);
+  const ni=(r.ingredients||[]).filter(i=>i.name).map(i=>({name:i.name,qty:scaleQ(i.qty,factor),checked:false,source:r.name}));
+  db.ref("/grocery/lists/"+listId+"/items").set([...(l.items||[]),...ni]);
+  db.ref("/grocery/lists/"+listId+"/updatedAt").set(new Date().toISOString());
+  closeModal();
+}
+
+// ============================================================
+// LIST TAB — color-coded personal lists (Firebase)
+// ============================================================
+function renderList(){
+  if(activeListId)renderListDetail(activeListId);
+  else renderListIndex();
+}
+
+function renderListIndex(){
+  const el=document.getElementById('l-body');if(!el)return;
+  const lists=Object.entries(listsD).sort((a,b)=>(b[1].createdAt||'').localeCompare(a[1].createdAt||''));
+  if(!lists.length){
+    el.innerHTML=`
+      <div class="empty" style="padding-top:60px">
+        <div class="ei">📋</div>
+        <p style="font-size:16px;font-weight:700;color:var(--pri);margin-bottom:8px">No lists yet</p>
+        <p style="font-size:14px;line-height:1.6">Tap <strong style="background:var(--acc);color:#fff;padding:1px 8px;border-radius:6px">+</strong> to create your first list</p>
+      </div>`;
+    return;
+  }
+  el.innerHTML=`
+    <div class="shdr"><span class="stitle">My Lists</span><span style="font-size:13px;color:var(--mut)">${lists.length} list${lists.length!==1?'s':''}</span></div>
+    <div style="padding:0 16px">
+      ${lists.map(([id,list])=>{
+        const c=TODO_COLORS.find(x=>x.id===list.color)||TODO_COLORS[0];
+        const cnt=(list.items||[]).length;
+        return `<div onclick="openListDetail('${id}')"
+          style="display:flex;align-items:center;gap:14px;padding:16px;margin-bottom:10px;background:var(--sur);border-radius:16px;box-shadow:0 2px 8px rgba(140,34,82,.08);cursor:pointer;border:1.5px solid ${c.bg}">
+          <div style="width:14px;height:14px;border-radius:50%;background:${c.txt};flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--pri);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(list.name)}</div>
+            <div style="font-size:12px;color:var(--mut);margin-top:2px">${cnt} item${cnt!==1?'s':''}</div>
+          </div>
+          <span style="font-size:20px;color:var(--acc)">›</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="height:80px"></div>
+  `;
+}
+
+function openListDetail(id){
+  activeListId=id;
+  const list=listsD[id];if(!list)return;
+  const c=TODO_COLORS.find(x=>x.id===list.color)||TODO_COLORS[0];
+  document.getElementById('list-ohdr').style.background=c.txt;
+  document.getElementById('list-title').textContent=list.name;
+  renderListInner(id,list,c);
+  showListView();
+}
+
+function renderListDetail(id){
+  const list=listsD[id];if(!list){activeListId=null;renderListIndex();return;}
+  const c=TODO_COLORS.find(x=>x.id===list.color)||TODO_COLORS[0];
+  document.getElementById('list-ohdr').style.background=c.txt;
+  document.getElementById('list-title').textContent=list.name;
+  renderListInner(id,list,c);
+  showListView();
+}
+
+function renderListInner(id,list,c){
+  const items=list.items||[];
+  document.getElementById('list-inner').innerHTML=`
+    <div style="padding:12px 16px;background:${c.bg};border-bottom:1.5px solid rgba(0,0,0,.07)">
+      <button onclick="openNewListItemForm()"
+        style="width:100%;padding:13px;background:${c.txt};color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">+ Add Item</button>
+    </div>
+    <div style="padding:0 16px">
+      ${!items.length
+        ?`<div style="text-align:center;color:var(--mut);padding:36px 0;font-size:14px">No items yet — tap + to add!</div>`
+        :items.map((item,idx)=>{
+          const ic=TODO_COLORS.find(x=>x.id===item.color)||TODO_COLORS[0];
+          return `<div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--bor)">
+            <div style="width:12px;height:12px;border-radius:50%;background:${ic.txt};flex-shrink:0"></div>
+            <span style="flex:1;font-size:16px;font-weight:600;color:var(--txt)">${esc(item.text)}</span>
+            <button onclick="deleteListItem('${id}',${idx})"
+              style="width:34px;height:34px;border-radius:50%;border:none;background:rgba(0,0,0,.06);font-size:16px;color:var(--mut);cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+          </div>`;
+        }).join('')
+      }
+    </div>
+    <div style="padding:16px 16px 8px">
+      <button class="btn btn-d btn-full" onclick="confirmDeleteList('${id}')">🗑️ Delete This List</button>
+    </div>
+    <div style="height:16px"></div>
+  `;
+}
+
+function deleteListItem(listId,idx){
+  const list=listsD[listId];if(!list)return;
+  const updated=(list.items||[]).filter((_,i)=>i!==idx);
+  db.ref('/lists/'+listId+'/items').set(updated);
+}
+
+function confirmDeleteList(id){
+  if(!confirm('Delete this list and all its items? Cannot be undone.'))return;
+  db.ref('/lists/'+id).remove();
+  closeListView();
+}
+
+function openNewListForm(){
+  lNewColor='pink';
+  document.getElementById('m-title').textContent='📋 New List';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg">
+      <label class="fl">List Name</label>
+      <input type="text" class="fi" id="new-list-name" placeholder="e.g. Weekend Project, Gifts, Errands...">
+    </div>
+    <div class="fg">
+      <label class="fl">Color</label>
+      <div class="color-pick" id="lcolor-pick">
+        ${TODO_COLORS.map(c=>`<div class="color-dot ${lNewColor===c.id?'sel':''}" style="background:${c.bg};border-color:${c.txt}" onclick="setLNewColor('${c.id}')" id="lcdot_${c.id}"></div>`).join('')}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" onclick="doCreateList()" style="flex:1">Create List</button>
+    </div>
+  `;
+  showModal();
+  setTimeout(()=>document.getElementById('new-list-name')?.focus(),300);
+}
+
+function setLNewColor(id){
+  lNewColor=id;
+  document.querySelectorAll('#lcolor-pick .color-dot').forEach(d=>d.classList.remove('sel'));
+  const el=document.getElementById('lcdot_'+id);if(el)el.classList.add('sel');
+}
+
+function doCreateList(){
+  const name=document.getElementById('new-list-name').value.trim();
+  if(!name){alert('Enter a list name.');return;}
+  const id='list_'+Date.now();
+  db.ref('/lists/'+id).set({name,color:lNewColor,items:[],createdAt:new Date().toISOString()});
+  activeListId=null;
+  closeModal();
+}
+
+function openNewListItemForm(){
+  lNewItemColor='pink';
+  document.getElementById('m-title').textContent='+ Add Item';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg">
+      <label class="fl">Item</label>
+      <input type="text" class="fi" id="new-item-name" placeholder="Type item name..."
+        onkeydown="if(event.key==='Enter')doAddListItem()">
+    </div>
+    <div class="fg">
+      <label class="fl">Color</label>
+      <div class="color-pick" id="icolor-pick">
+        ${TODO_COLORS.map(c=>`<div class="color-dot ${lNewItemColor===c.id?'sel':''}" style="background:${c.bg};border-color:${c.txt}" onclick="setLNewItemColor('${c.id}')" id="icdot_${c.id}"></div>`).join('')}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" onclick="doAddListItem()" style="flex:1">Add Item</button>
+    </div>
+  `;
+  showModal();
+  setTimeout(()=>document.getElementById('new-item-name')?.focus(),300);
+}
+
+function setLNewItemColor(id){
+  lNewItemColor=id;
+  document.querySelectorAll('#icolor-pick .color-dot').forEach(d=>d.classList.remove('sel'));
+  const el=document.getElementById('icdot_'+id);if(el)el.classList.add('sel');
+}
+
+function doAddListItem(){
+  const text=document.getElementById('new-item-name').value.trim();
+  if(!text){alert('Enter an item name.');return;}
+  const list=listsD[activeListId];if(!list)return;
+  const updated=[...(list.items||[]),{text,color:lNewItemColor}];
+  db.ref('/lists/'+activeListId+'/items').set(updated);
+  closeModal();
+}
+
+// ============================================================
+// CUSTOM BAKE SCHEDULE EDITOR
+// ============================================================
+const SCHEDULE_EMOJIS=['🌾','🥣','🔄','🔥','💧','🧊','⏰','🌡️','🥖','✂️','🫙','⚗️'];
+
+function openEditScheduleModal(){
+  document.getElementById('m-title').textContent='✏️ Edit Bake Schedule';
+  renderScheduleModal();
+  showModal();
+}
+
+function renderScheduleModal(){
+  const sorted=[...SD].sort((a,b)=>a.offset-b.offset);
+  document.getElementById('m-body').innerHTML=`
+    <p style="font-size:13px;color:var(--mut);margin-bottom:14px">Build your custom bake schedule. "0" = bake day, negative = days before.</p>
+    <div id="sched-list">
+      ${sorted.map((step,idx)=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--bor)">
+          <span style="font-size:20px">${step.emoji}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:700;color:var(--txt)">${esc(step.label)}</div>
+            <div style="font-size:12px;color:var(--mut)">${step.offset===0?'Bake Day':step.offset+' days before'}</div>
+          </div>
+          <button onclick="editScheduleStep(${idx})" style="background:none;border:none;font-size:16px;cursor:pointer;padding:4px">✏️</button>
+          <button onclick="deleteScheduleStep(${idx})" style="background:none;border:none;font-size:16px;cursor:pointer;padding:4px;color:var(--err)">🗑️</button>
+        </div>`).join('')}
+    </div>
+    <button class="btn btn-s btn-full" onclick="addScheduleStep()" style="margin-top:12px">+ Add Step</button>
+    <button class="btn btn-s btn-full" onclick="resetSchedule()" style="margin-top:8px">↩️ Reset to Default</button>
+    <button class="btn btn-p btn-full" onclick="closeModal()" style="margin-top:8px">Done</button>
+    <div style="height:8px"></div>
+  `;
+}
+
+function editScheduleStep(idx){
+  const sorted=[...SD].sort((a,b)=>a.offset-b.offset);
+  const step=sorted[idx];
+  const realIdx=SD.findIndex(s=>s.offset===step.offset&&s.label===step.label);
+  document.getElementById('m-title').textContent='✏️ Edit Step';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg">
+      <label class="fl">Emoji</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        ${SCHEDULE_EMOJIS.map(e=>`<span style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid ${e===step.emoji?'var(--acc)':'transparent'};background:${e===step.emoji?'var(--acc-lt)':'none'}" onclick="selSchedEmoji('${e}',this)">${e}</span>`).join('')}
+      </div>
+      <input type="text" class="fi" id="step-emoji-val" value="${step.emoji}" placeholder="Or type emoji" style="margin-top:4px">
+    </div>
+    <div class="fg"><label class="fl">Step Name</label><input type="text" class="fi" id="step-label" value="${esc(step.label)}"></div>
+    <div class="fg"><label class="fl">Days (0 = bake day, -1 = day before)</label><input type="number" class="fi" id="step-offset" value="${step.offset}" max="0" min="-14"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="openEditScheduleModal()" style="flex:1">← Back</button>
+      <button class="btn btn-p" onclick="saveScheduleStep(${realIdx})" style="flex:1">Save Step</button>
+    </div>
+  `;
+}
+
+function selSchedEmoji(e,el){
+  el.parentElement.querySelectorAll('span').forEach(s=>{s.style.border='2px solid transparent';s.style.background='none';});
+  el.style.border='2px solid var(--acc)';el.style.background='var(--acc-lt)';
+  const inp=document.getElementById('step-emoji-val');if(inp)inp.value=e;
+}
+
+function saveScheduleStep(realIdx){
+  const emoji=document.getElementById('step-emoji-val').value.trim()||SD[realIdx].emoji;
+  const label=document.getElementById('step-label').value.trim();
+  const offset=parseInt(document.getElementById('step-offset').value)||0;
+  if(!label){alert('Enter a step name.');return;}
+  const newSD=[...SD];
+  newSD[realIdx]={emoji,label,offset};
+  db.ref('/starter/schedule').set(newSD);
+  openEditScheduleModal();
+}
+
+function addScheduleStep(){
+  document.getElementById('m-title').textContent='+ Add Step';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg">
+      <label class="fl">Emoji</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        ${SCHEDULE_EMOJIS.map((e,i)=>`<span style="font-size:24px;cursor:pointer;padding:6px;border-radius:8px;border:2px solid ${i===0?'var(--acc)':'transparent'};background:${i===0?'var(--acc-lt)':'none'}" onclick="selSchedEmoji('${e}',this)">${e}</span>`).join('')}
+      </div>
+      <input type="text" class="fi" id="step-emoji-val" value="${SCHEDULE_EMOJIS[0]}" placeholder="Or type emoji" style="margin-top:4px">
+    </div>
+    <div class="fg"><label class="fl">Step Name</label><input type="text" class="fi" id="step-label" placeholder="e.g. Second Feed"></div>
+    <div class="fg"><label class="fl">Days (0 = bake day, -1 = day before)</label><input type="number" class="fi" id="step-offset" value="-1" max="0" min="-14"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="openEditScheduleModal()" style="flex:1">← Back</button>
+      <button class="btn btn-p" onclick="doAddScheduleStep()" style="flex:1">Add Step</button>
+    </div>
+  `;
+}
+
+function doAddScheduleStep(){
+  const emoji=document.getElementById('step-emoji-val').value.trim()||'🌾';
+  const label=document.getElementById('step-label').value.trim();
+  const offset=parseInt(document.getElementById('step-offset').value)||0;
+  if(!label){alert('Enter a step name.');return;}
+  const newSD=[...SD,{emoji,label,offset}];
+  db.ref('/starter/schedule').set(newSD);
+  openEditScheduleModal();
+}
+
+function deleteScheduleStep(idx){
+  const sorted=[...SD].sort((a,b)=>a.offset-b.offset);
+  const step=sorted[idx];
+  if(!confirm('Delete step "'+step.label+'"?'))return;
+  const newSD=SD.filter(s=>!(s.offset===step.offset&&s.label===step.label));
+  db.ref('/starter/schedule').set(newSD);
+  openEditScheduleModal();
+}
+
+function resetSchedule(){
+  if(!confirm('Reset to default schedule?'))return;
+  db.ref('/starter/schedule').set(SD_DEFAULT);
+}
+
+// ============================================================
+// STARTER
+// ============================================================
+function openStarter(){document.getElementById('s-ov').classList.add('open');renderStarter();}
+function closeStarter(){document.getElementById('s-ov').classList.remove('open');}
+
+function renderStarter(){
+  const el=document.getElementById('s-inner');
+  const ss=getStStatus();
+  const lastFedTxt=starterD.lastFed?timeAgo(new Date(starterD.lastFed)):'Not logged yet';
+  const nxt=getNextFeed();
+  const logEntries=Object.entries(bakeLog).sort((a,b)=>(b[1].loggedAt||'').localeCompare(a[1].loggedAt||''));
+  el.innerHTML=`
+    <div class="sc-card">
+      <div class="sc-top">
+        <span style="font-family:'Playfair Display',serif;font-size:16px;font-weight:600">Starter Status</span>
+        <span class="sc-badge">${ss.emoji} ${ss.label}</span>
+      </div>
+      <div class="sc-meta">
+        <div class="sc-box"><div class="v">${lastFedTxt}</div><div class="l">Last Fed</div></div>
+        <div class="sc-box"><div class="v">${nxt}</div><div class="l">Feed By</div></div>
+      </div>
+      <div class="ltog">
+        <button class="lbtn ${starterD.location==='counter'?'active':''}" onclick="setLoc('counter')">🍶 Room Temp</button>
+        <button class="lbtn ${starterD.location==='fridge'?'active':''}" onclick="setLoc('fridge')">🧊 Fridge</button>
+      </div>
+      <div style="padding:10px 14px 0">
+        <input type="text" placeholder="🌡️ Temperature note..." value="${esc(starterD.tempNote||'')}" onchange="saveTempNote(this.value)"
+          style="width:100%;padding:9px 12px;border:1.5px solid var(--bor);border-radius:8px;font-size:14px;background:var(--sur);color:var(--txt)">
+      </div>
+      <div class="sc-acts">
+        <button class="btn btn-p" onclick="feedStarter()" style="flex:1">✅ Fed It!</button>
+      </div>
+    </div>
+    <div style="margin:0 16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <p class="sub-h" style="margin:0">🗓️ My Bake Schedule</p>
+        <button class="btn btn-g btn-sm" onclick="openEditScheduleModal()">✏️ Edit Steps</button>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+        ${[...SD].sort((a,b)=>a.offset-b.offset).map(s=>`<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--bor);font-size:13px"><span style="color:var(--mut);width:38px;flex-shrink:0;font-size:12px">${s.offset===0?'Bake':s.offset+'d'}</span><span>${s.emoji} ${s.label}</span></div>`).join('')}
+      </div>
+      <label class="fl">Set Bake Day</label>
+      <input type="date" id="bd-in" value="${starterD.bakeDay||fmtD(new Date())}" min="${fmtD(new Date())}" onchange="prevBS(this.value)">
+      <div id="bd-prev" style="margin-top:10px">${starterD.bakeDay?renderBS(starterD.bakeDay):''}</div>
+      <button class="btn btn-p btn-full" onclick="confBakeDay()" style="margin-top:10px">📅 Set on Calendar</button>
+      ${starterD.bakeDay?`<button class="btn btn-s btn-full" onclick="clrBakeDay()" style="margin-top:8px">Clear Schedule</button>`:''}
+    </div>
+    <div style="margin:16px 16px 0">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <p class="sub-h" style="margin:0">🥖 Bake Log</p>
+        <button class="btn btn-g btn-sm" onclick="openBakeLogModal()">+ Log a Bake</button>
+      </div>
+      ${logEntries.length
+        ?logEntries.slice(0,15).map(([,e])=>`<div class="blog-entry"><div class="blog-date">${e.date||''}</div><div style="font-size:14px;color:var(--txt)">${esc(e.note||'')}</div></div>`).join('')
+        :`<div style="padding:16px 0;text-align:center;color:var(--mut);font-size:14px">No bakes logged yet.</div>`
+      }
+    </div>
+    <div style="height:24px"></div>
+  `;
+}
+
+function renderBS(bakeDay){
+  const bd=new Date(bakeDay+'T12:00:00');
+  return `<div class="bsched">${SD.map(s=>{
+    const d=addDays(bd,s.offset);
+    return `<div class="bsrow"><span class="bsdate">${d.toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'})}</span><span>${s.emoji} ${s.label}</span></div>`;
+  }).join('')}</div>`;
+}
+function prevBS(v){const el=document.getElementById('bd-prev');if(el&&v)el.innerHTML=renderBS(v);}
+function confBakeDay(){
+  const el=document.getElementById('bd-in');
+  const v=el?el.value:'';
+  if(!v){alert('Please select a bake day.');return;}
+  db.ref('/starter').update({bakeDay:v});
+  const bd=new Date(v+'T12:00:00');
+  const writes=[];
+  SD.forEach(s=>{
+    const d=addDays(bd,s.offset);
+    const ds=fmtD(d);
+    writes.push(db.ref('/calendar/'+ds+'/sourdough').set({emoji:s.emoji,label:s.label}));
+  });
+  Promise.all(writes).then(()=>{
+    alert('Bake schedule set! Check your calendar — prep steps have been added to each day.');
+    if(curView==='calendar'){calDayDetail=null;renderCalendar();}
+    if(curView==='dashboard')renderDash();
+  });
+}
+function clrBakeDay(){
+  if(!confirm('Clear the bake day schedule and remove from calendar?'))return;
+  if(starterD.bakeDay){
+    const bd=new Date(starterD.bakeDay+'T12:00:00');
+    SD.forEach(s=>{const d=addDays(bd,s.offset);db.ref('/calendar/'+fmtD(d)+'/sourdough').remove();});
+  }
+  db.ref('/starter').update({bakeDay:null});
+  if(curView==='calendar'){calDayDetail=null;renderCalendar();}
+  if(curView==='dashboard')renderDash();
+}
+function feedStarter(){db.ref('/starter').update({lastFed:new Date().toISOString()});}
+function setLoc(loc){db.ref('/starter').update({location:loc});}
+function saveTempNote(v){db.ref('/starter').update({tempNote:v});}
+function getStStatus(){
+  if(!starterD.lastFed)return{emoji:'❓',label:'Not tracked'};
+  const hrs=(Date.now()-new Date(starterD.lastFed))/3600000;
+  if(starterD.location==='fridge'){
+    if(hrs<120)return{emoji:'🟢',label:'Happy'};
+    if(hrs<168)return{emoji:'🟡',label:'Feed Soon'};
+    return{emoji:'🔴',label:'Feed Now!'};
+  }
+  if(hrs<6)return{emoji:'🟢',label:'Happy'};
+  if(hrs<10)return{emoji:'🟡',label:'Feed Soon'};
+  return{emoji:'🔴',label:'Feed Now!'};
+}
+function getNextFeed(){
+  if(!starterD.lastFed)return'—';
+  const hrs=starterD.location==='fridge'?120:8;
+  const next=new Date(new Date(starterD.lastFed).getTime()+hrs*3600000);
+  const diff=next-Date.now();
+  if(diff<0)return'Now!';
+  const h=Math.floor(diff/3600000);
+  if(h<1)return'Very soon!';
+  if(h<24)return'In '+h+'h';
+  return'In '+Math.floor(h/24)+'d';
+}
+function openBakeLogModal(){
+  document.getElementById('m-title').textContent='🥖 Log a Bake';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg"><label class="fl">Date</label><input type="date" id="bl-date" value="${fmtD(new Date())}"></div>
+    <div class="fg"><label class="fl">Notes</label><textarea class="fta" id="bl-note" placeholder="e.g. 2 sourdough loaves, great oven spring, 450°F 45 min"></textarea></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" onclick="doLogBake()" style="flex:1">Save Log</button>
+    </div>
+  `;
+  showModal();
+}
+function doLogBake(){
+  const date=document.getElementById('bl-date').value;
+  const note=document.getElementById('bl-note').value.trim();
+  if(!note){alert('Add a note about your bake.');return;}
+  db.ref('/starter/log').push({date,note,loggedAt:new Date().toISOString()});
+  closeModal();
+}
+
+// ============================================================
+// MODAL & OVERLAYS
+// ============================================================
+function showListView(){
+  document.getElementById('list-ov').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeListView(){
+  document.getElementById('list-ov').classList.remove('open');
+  document.body.style.overflow='';
+  activeListId=null;
+  if(curView==='list')renderListIndex();
+}
+
+function showModal(){document.getElementById('m-ov').classList.add('open');document.body.style.overflow='hidden';}
+function closeModal(){document.getElementById('m-ov').classList.remove('open');document.body.style.overflow='';pendingPhoto=null;}
+function handleOvClick(e){if(e.target===document.getElementById('m-ov'))closeModal();}
+
+// ============================================================
+// IMAGE COMPRESSION
+// ============================================================
+function compressImg(file,maxW,quality){
+  return new Promise((resolve,reject)=>{
+    const img=new Image(),url=URL.createObjectURL(file);
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Image load failed'));};
+    img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+      const c=document.createElement('canvas');
+      c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      c.toBlob(blob=>resolve(blob),'image/jpeg',quality);
+    };
+    img.src=url;
+  });
+}
+
+// ============================================================
+// SCALE QUANTITY
+// ============================================================
+function scaleQ(qty,factor){
+  if(!qty||factor===1)return qty||'';
+  const m=String(qty).match(/^([\d.]+(?:\/[\d.]+)?)\s*(.*)/);
+  if(!m)return qty;
+  let n=m[1].includes('/')?parseFloat(m[1].split('/')[0])/parseFloat(m[1].split('/')[1]):parseFloat(m[1]);
+  if(isNaN(n))return qty;
+  const sc=n*factor;
+  return(sc%1===0?sc.toString():parseFloat(sc.toFixed(2)).toString())+(m[2]?' '+m[2]:'');
+}
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function getWeekDates(off){
+  const now=new Date(),start=new Date(now);
+  start.setDate(now.getDate()-now.getDay()+off*7);start.setHours(0,0,0,0);
+  return Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return fmtD(d);});
+}
+function fmtD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function addDays(date,n){const d=new Date(date);d.setDate(d.getDate()+n);return d;}
+function timeAgo(date){
+  const m=Math.floor((Date.now()-date)/60000);
+  if(m<1)return'just now';if(m<60)return m+'m ago';
+  const h=Math.floor(m/60);if(h<24)return h+'h ago';
+  return Math.floor(h/24)+'d ago';
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ============================================================
+// KITCHEN TIMER
+// ============================================================
+function timerBtnTap(){
+  if(timerInterval)openTimerRunning();
+  else openTimerSetup();
+}
+function openTimerSetup(){
+  timerPresetMins=0;
+  document.getElementById('m-title').textContent='⏱️ Kitchen Timer';
+  document.getElementById('m-body').innerHTML=`
+    <div class="fg">
+      <label class="fl">Label (optional)</label>
+      <input type="text" class="fi" id="timer-label-in" placeholder="e.g. Bread in oven, Butter softening..." value="${esc(timerLabel)}">
+    </div>
+    <div class="fg">
+      <label class="fl">Presets</label>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px" id="timer-presets">
+        ${[5,10,15,20,25,30,45,60].map(m=>`<button class="timer-preset" onclick="setTimerPreset(${m})">${m}m</button>`).join('')}
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Custom Time</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" class="fi" id="timer-h" placeholder="h" min="0" max="23" style="width:70px;text-align:center" value="0">
+        <span style="font-size:18px;font-weight:700;color:var(--mut)">:</span>
+        <input type="number" class="fi" id="timer-m" placeholder="min" min="0" max="59" style="width:70px;text-align:center" value="0">
+        <span style="font-size:18px;font-weight:700;color:var(--mut)">:</span>
+        <input type="number" class="fi" id="timer-s" placeholder="sec" min="0" max="59" style="width:70px;text-align:center" value="0">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-s" onclick="closeModal()" style="flex:1">Cancel</button>
+      <button class="btn btn-p" onclick="startTimer()" style="flex:1">▶ Start</button>
+    </div>
+    <div style="height:8px"></div>
+  `;
+  showModal();
+  setTimeout(()=>document.getElementById('timer-label-in')?.focus(),300);
+}
+function setTimerPreset(mins){
+  timerPresetMins=mins;
+  document.querySelectorAll('.timer-preset').forEach(b=>b.classList.toggle('active',parseInt(b.textContent)===mins));
+  const h=Math.floor(mins/60);const m=mins%60;
+  const hi=document.getElementById('timer-h');const mi=document.getElementById('timer-m');const si=document.getElementById('timer-s');
+  if(hi)hi.value=h;if(mi)mi.value=m;if(si)si.value=0;
+}
+function startTimer(){
+  const lbl=document.getElementById('timer-label-in')?.value.trim()||'';
+  const h=parseInt(document.getElementById('timer-h')?.value)||0;
+  const m=parseInt(document.getElementById('timer-m')?.value)||0;
+  const s=parseInt(document.getElementById('timer-s')?.value)||0;
+  const total=(h*3600+m*60+s)*1000;
+  if(total<=0){alert('Set a time greater than 0.');return;}
+  timerLabel=lbl;timerTotalMs=total;timerEndMs=Date.now()+total;
+  if(timerInterval)clearInterval(timerInterval);
+  timerInterval=setInterval(tickTimer,500);
+  updateTimerBtn();
+  closeModal();
+}
+function tickTimer(){
+  const rem=timerEndMs-Date.now();
+  if(rem<=0){
+    clearInterval(timerInterval);timerInterval=null;
+    const btn=document.getElementById('timer-btn');
+    if(btn){btn.textContent='⏰';btn.className='starter-btn timer-btn-alert';}
+    if(Notification&&Notification.permission==='granted'){
+      new Notification('⏰ Timer done!'+(timerLabel?' — '+timerLabel:''));
+    }
+    return;
+  }
+  updateTimerBtn();
+}
+function updateTimerBtn(){
+  const btn=document.getElementById('timer-btn');if(!btn)return;
+  const rem=Math.max(0,timerEndMs-Date.now());
+  const pct=rem/timerTotalMs;
+  const h=Math.floor(rem/3600000);
+  const m=Math.floor((rem%3600000)/60000);
+  const s=Math.floor((rem%60000)/1000);
+  const txt=h>0?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  btn.textContent=txt;
+  btn.className='starter-btn '+(pct>0.33?'timer-btn-run':pct>0.1?'timer-btn-warn':'timer-btn-alert');
+}
+function cancelTimer(){
+  if(timerInterval)clearInterval(timerInterval);
+  timerInterval=null;timerEndMs=0;timerTotalMs=0;
+  const btn=document.getElementById('timer-btn');
+  if(btn){btn.textContent='⏱️';btn.className='starter-btn';}
+  closeModal();
+}
+function openTimerRunning(){
+  const rem=Math.max(0,timerEndMs-Date.now());
+  const h=Math.floor(rem/3600000);
+  const m=Math.floor((rem%3600000)/60000);
+  const s=Math.floor((rem%60000)/1000);
+  const txt=h>0?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  document.getElementById('m-title').textContent='⏱️ Timer Running';
+  document.getElementById('m-body').innerHTML=`
+    ${timerLabel?`<div style="text-align:center;font-size:14px;color:var(--mut);margin-bottom:8px">${esc(timerLabel)}</div>`:''}
+    <div style="text-align:center;font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:var(--pri);letter-spacing:2px;padding:16px 0">${txt}</div>
+    <button class="btn btn-d btn-full" onclick="cancelTimer()">⏹ Cancel Timer</button>
+    <div style="height:8px"></div>
+  `;
+  showModal();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('fab').style.display='none';
+  let fbInited=false;
+  firebase.auth().onAuthStateChanged(user=>{
+    authUser=user;
+    if(user&&!fbInited){fbInited=true;initFB();renderDash();}
+  });
+  firebase.auth().signInAnonymously().catch(e=>{
+    setSS('err','Offline');
+    if(e.code==='auth/operation-not-allowed'){
+      const el=document.getElementById('d-body');
+      if(el)el.insertAdjacentHTML('afterbegin',`
+        <div style="margin:12px 16px 0;padding:14px 16px;background:#FFF8DC;border:2px solid #F0C040;border-radius:14px">
+          <div style="font-weight:700;color:#7A5A00;margin-bottom:4px">⚠️ Action needed</div>
+          <div style="font-size:13px;color:#A07820;line-height:1.6">Enable <strong>Anonymous</strong> sign-in in <strong>Firebase Console → Authentication → Sign-in method</strong>, then refresh.</div>
+        </div>`);
+    }
+  });
+});
+</script>
+</body>
+</html>
