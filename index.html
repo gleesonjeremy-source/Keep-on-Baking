@@ -330,6 +330,14 @@
   <div id="s-inner"></div>
 </div>
 
+<div class="s-ov" id="mb-ov">
+  <div class="s-ohdr">
+    <span class="title">🍽️ Meal Bank</span>
+    <button class="back-btn" data-act="mbClose">✕ Close</button>
+  </div>
+  <div id="mb-inner"></div>
+</div>
+
 <div class="s-ov" id="list-ov">
   <div class="s-ohdr" id="list-ohdr">
     <button class="back-btn" onclick="closeListView()">‹ Back</button>
@@ -430,8 +438,48 @@ let activeListId=null,lNewColor='pink',lNewItemColor='pink';
 let activeGListId=null;
 let pendingPhoto=null,rFormCat=null,rFormServ=4,editingRid=null,addShopRid=null;
 let calPickRid=null,calPickStep=1,calPickDs=null;
-const APP_VERSION='2.0.0';
+const APP_VERSION='2.1.0';
 let photoCache={},photoMigrationRan=false;
+let mealBank={},mealPlan={},mbSeedTried=false,mirrorTimer=null;
+let mbFormProt='chicken',mbFormWhen='weekday',mbFormSeason='all',editingMbId=null;
+const PROTEINS=[
+  {id:'beef',label:'Ground Beef',emoji:'🥩'},
+  {id:'chicken',label:'Chicken',emoji:'🍗'},
+  {id:'steak',label:'Steak',emoji:'🥩'},
+  {id:'fish',label:'Fish',emoji:'🐟'},
+  {id:'pork',label:'Pork',emoji:'🥓'},
+  {id:'veggie',label:'Veggie',emoji:'🥦'},
+  {id:'other',label:'Other',emoji:'🍽️'},
+];
+const PM={};PROTEINS.forEach(p=>PM[p.id]=p);
+const WHEN_OPTS=[{id:'weekday',label:'Weekdays'},{id:'weekend',label:'Weekends'},{id:'both',label:'Both'}];
+const SEASON_OPTS=[{id:'all',label:'Year-round'},{id:'winter',label:'❄️ Winter'},{id:'spring',label:'🌸 Spring'},{id:'summer',label:'☀️ Summer'},{id:'fall',label:'🍂 Fall'}];
+const SEED_MEALS={
+  mb_01:{name:'Stuffed Bell Peppers',protein:'beef',when:'weekday',season:'all',active:true},
+  mb_02:{name:'Asian Ground Beef Bowl',protein:'beef',when:'weekday',season:'all',active:true},
+  mb_03:{name:'Crunchy Tacos',protein:'beef',when:'weekday',season:'all',active:true},
+  mb_04:{name:'Sweet Potato Beef Bake w/ Mozzarella',protein:'beef',when:'weekday',season:'all',active:true},
+  mb_05:{name:'Lettuce Wraps',protein:'beef',when:'weekday',season:'all',active:true},
+  mb_06:{name:'Ground Beef, Rice & Broccoli',protein:'beef',when:'weekday',season:'all',active:true},
+  mb_07:{name:'Chicken Nuggets',protein:'chicken',when:'weekday',season:'all',active:true},
+  mb_08:{name:'Nuggets & Salad',protein:'chicken',when:'weekday',season:'all',active:true},
+  mb_09:{name:'Pan-Seared Chicken + Mexican Rice',protein:'chicken',when:'weekday',season:'all',active:true},
+  mb_10:{name:'Chicken Fajitas',protein:'chicken',when:'weekday',season:'all',active:true},
+  mb_11:{name:'Oven-Baked Chicken',protein:'chicken',when:'weekday',season:'all',active:true},
+  mb_12:{name:'Chicken Wings',protein:'chicken',when:'weekday',season:'all',active:true},
+  mb_13:{name:'Crispy Chicken Sandwich',protein:'chicken',when:'both',season:'all',active:true},
+  mb_14:{name:'Shredded Chicken Taquitos',protein:'chicken',when:'weekday',season:'all',active:true},
+  mb_15:{name:'Grilled Cheese',protein:'other',when:'weekday',season:'all',active:true},
+  mb_16:{name:'Fish Night',protein:'fish',when:'weekday',season:'all',active:true},
+  mb_17:{name:'Carne Asada Tacos',protein:'steak',when:'weekday',season:'all',active:true},
+  mb_18:{name:'Mongolian Beef',protein:'steak',when:'weekday',season:'all',active:true},
+  mb_19:{name:'Spaghetti & Meatballs',protein:'beef',when:'weekday',season:'all',active:true},
+  mb_20:{name:'Mozzarella Sticks Night',protein:'other',when:'weekday',season:'all',active:true},
+  mb_21:{name:'Smoked Fish',protein:'fish',when:'weekend',season:'all',active:true},
+  mb_22:{name:'Pizza',protein:'other',when:'weekend',season:'all',active:true},
+  mb_23:{name:'Hamburgers',protein:'beef',when:'weekend',season:'all',active:true},
+  mb_24:{name:'Tuna Sandwich on Sourdough',protein:'fish',when:'weekend',season:'all',active:true},
+};
 
 // ============================================================
 // FIREBASE LISTENERS
@@ -439,39 +487,56 @@ let photoCache={},photoMigrationRan=false;
 function initFB(){
   setSS('pend','Syncing...');
   db.ref('/recipes').on('value',s=>{
-    recipes=s.val()||{};setSS('ok','Synced');
+    recipes=s.val()||{};saveMirrorSoon();setSS('ok','Synced');
     if(curView==='recipes')renderRecipes();
     if(curView==='dashboard')renderDash();
     if(curView==='calendar')renderCalendar();
   },()=>setSS('err','Offline'));
   db.ref('/calendar').on('value',s=>{
-    calD=s.val()||{};
+    calD=s.val()||{};saveMirrorSoon();
     if(curView==='calendar'){if(calDayDetail)renderDayDetail(calDayDetail);else renderCalendar();}
     if(curView==='dashboard')renderDash();
   });
   db.ref('/ideas').on('value',s=>{
-    ideas=s.val()||{};
+    ideas=s.val()||{};saveMirrorSoon();
     if(curView==='recipes'&&rTab==='ideas')renderRecipes();
     setTimeout(migrateLegacyPhotos,2000);
   });
   db.ref('/starter').on('value',s=>{
     starterD=Object.assign({lastFed:null,location:'counter',tempNote:'',bakeDay:null},s.val()||{});
     if(s.val()&&s.val().schedule) SD=[...s.val().schedule];
+    saveMirrorSoon();
     if(document.getElementById('s-ov').classList.contains('open'))renderStarter();
     if(curView==='dashboard')renderDash();
   });
   db.ref('/starter/log').on('value',s=>{
-    bakeLog=s.val()||{};
+    bakeLog=s.val()||{};saveMirrorSoon();
     if(document.getElementById('s-ov').classList.contains('open'))renderStarter();
   });
   db.ref('/grocery/lists').on('value',s=>{
-    groceryLists=s.val()||{};
+    groceryLists=s.val()||{};saveMirrorSoon();
     if(curView==='grocery')renderGrocery();
     if(curView==='dashboard')renderDash();
   });
   db.ref('/lists').on('value',s=>{
-    listsD=s.val()||{};
+    listsD=s.val()||{};saveMirrorSoon();
     if(curView==='list')renderList();
+  });
+  db.ref('/mealBank').on('value',s=>{
+    const v=s.val();
+    seedMealBankIfEmpty(!!v);
+    mealBank=v||{};saveMirrorSoon();
+    ensureWeekPlan();
+    if(curView==='dashboard')renderDash();
+    if(document.getElementById('mb-ov').classList.contains('open'))renderMealBank();
+  });
+  db.ref('/mealPlan').on('value',s=>{
+    mealPlan=s.val()||{};saveMirrorSoon();
+    if(curView==='dashboard')renderDash();
+  });
+  db.ref('.info/connected').on('value',s=>{
+    if(s.val())setSS('ok','Synced');
+    else setSS('err','Offline — will sync');
   });
 }
 function setSS(s,t){
@@ -544,6 +609,197 @@ function getDashGreeting(){
 }
 
 // ============================================================
+// OFFLINE MIRROR — instant load + works with no signal
+// ============================================================
+function saveMirrorSoon(){
+  clearTimeout(mirrorTimer);
+  mirrorTimer=setTimeout(()=>{
+    try{localStorage.setItem('kob_mirror',JSON.stringify({recipes,calD,ideas,groceryLists,listsD,starterD,bakeLog,SD,mealBank,mealPlan,ts:Date.now()}));}catch(e){}
+  },600);
+}
+function hydrateMirror(){
+  try{
+    const raw=localStorage.getItem('kob_mirror');if(!raw)return false;
+    const m=JSON.parse(raw);
+    recipes=m.recipes||{};calD=m.calD||{};ideas=m.ideas||{};groceryLists=m.groceryLists||{};
+    listsD=m.listsD||{};bakeLog=m.bakeLog||{};mealBank=m.mealBank||{};mealPlan=m.mealPlan||{};
+    if(m.starterD)starterD=Object.assign(starterD,m.starterD);
+    if(m.SD&&m.SD.length)SD=[...m.SD];
+    return true;
+  }catch(e){return false;}
+}
+
+// ============================================================
+// SMART MENU — meal bank, rotation & suggestions
+// ============================================================
+function getSeason(){const mo=new Date().getMonth();return mo<2||mo===11?'winter':mo<5?'spring':mo<8?'summer':'fall';}
+function mbInSeason(m){return !m.season||m.season==='all'||m.season===getSeason();}
+function mbPool(kind){
+  return Object.entries(mealBank).filter(([,m])=>m&&m.active!==false&&mbInSeason(m)&&(m.when==='both'||m.when===kind));
+}
+function recentMealIds(){
+  const wk=getWeekDates(0),prevKey=fmtD(addDays(new Date(wk[0]+'T12:00:00'),-7));
+  const ids=new Set();
+  [mealPlan[prevKey],mealPlan[wk[0]]].forEach(p=>{if(p)Object.entries(p).forEach(([k,v])=>{if(k!=='generatedAt'&&v)ids.add(v);});});
+  return ids;
+}
+function pickMeal(kind,used,prevProt){
+  let pool=mbPool(kind).filter(([id])=>!used.has(id));
+  if(!pool.length)pool=mbPool(kind);
+  if(!pool.length)return null;
+  const varied=pool.filter(([,m])=>m.protein!==prevProt);
+  const from=varied.length?varied:pool;
+  return from[Math.floor(Math.random()*from.length)][0];
+}
+function buildWeekPlan(){
+  const wk=getWeekDates(0),plan={generatedAt:new Date().toISOString()};
+  const used=recentMealIds();let prevProt=null;
+  wk.forEach(ds=>{
+    const dow=new Date(ds+'T12:00:00').getDay();
+    const id=pickMeal((dow===0||dow===6)?'weekend':'weekday',used,prevProt);
+    if(id){plan[ds]=id;used.add(id);prevProt=mealBank[id]?.protein||null;}
+  });
+  return plan;
+}
+function ensureWeekPlan(){
+  if(!Object.keys(mealBank).length)return;
+  const key=getWeekDates(0)[0];
+  if(mealPlan[key])return;
+  mealPlan[key]=buildWeekPlan();
+  db.ref('/mealPlan/'+key).set(mealPlan[key]);
+}
+function seedMealBankIfEmpty(snapExists){
+  if(mbSeedTried||snapExists)return;
+  mbSeedTried=true;
+  db.ref('/mealBank').update(SEED_MEALS);
+}
+function smartMenuHtml(){
+  if(!Object.keys(mealBank).length)return'';
+  const wk=getWeekDates(0),key=wk[0],plan=mealPlan[key]||{},today=fmtD(new Date());
+  const rows=wk.map(ds=>{
+    const d=new Date(ds+'T12:00:00'),dow=d.getDay(),isT=ds===today,isPast=ds<today;
+    const lbl=d.toLocaleDateString('en-US',{weekday:'short'})+' '+d.getDate();
+    const manual=calD[ds]?.dinner?getMealDisplay(calD[ds].dinner):null;
+    const wkend=(dow===0||dow===6);
+    let right;
+    if(manual){
+      right=`<span style="font-size:13px;font-weight:700;color:var(--ok)">✓ ${esc(manual.name)}</span>`;
+    }else{
+      const mid=plan[ds],m=mid?mealBank[mid]:null;
+      right=m
+        ?`<span style="flex:1;font-size:13px;font-weight:700;color:var(--txt)">${PM[m.protein]?.emoji||'🍽️'} ${esc(m.name)}</span>
+          ${isPast?'':`<button class="t-btn t-btn-o" data-act="mbAccept" data-ds="${ds}" style="padding:5px 10px;font-size:12px">✓</button>
+          <button class="t-btn t-btn-w" data-act="mbSwap" data-ds="${ds}" style="padding:5px 10px;font-size:12px">🔄</button>`}`
+        :`<span style="font-size:13px;color:var(--mut)">—</span>`;
+    }
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--bor);${isPast?'opacity:.45;':''}">
+      <span style="width:52px;flex-shrink:0;font-size:12px;font-weight:700;color:${isT?'var(--acc)':wkend?'var(--warn)':'var(--mut)'}">${lbl}</span>
+      <div style="flex:1;display:flex;align-items:center;gap:6px">${right}</div>
+    </div>`;
+  }).join('');
+  return `<div class="shdr"><span class="stitle">🍽️ Smart Menu</span>
+      <button data-act="mbOpen" style="border:none;background:none;font-size:13px;font-weight:700;color:var(--acc);cursor:pointer">Meal Bank →</button>
+    </div>
+    <div class="wk-card" style="padding:6px 14px 10px">
+      ${rows}
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-s btn-sm" data-act="mbReshuffle" style="flex:1">🔀 Reshuffle Suggestions</button>
+      </div>
+      <div style="font-size:11px;color:var(--mut);margin-top:8px;text-align:center">Suggestions only — ✓ puts it on the calendar. Days you planned yourself are never touched.</div>
+    </div>`;
+}
+function mbAcceptDay(ds){
+  const key=getWeekDates(0)[0],mid=(mealPlan[key]||{})[ds],m=mid?mealBank[mid]:null;
+  if(!m)return;
+  db.ref('/calendar/'+ds+'/dinner').set('custom:'+m.name);
+}
+function mbSwapDay(ds){
+  const key=getWeekDates(0)[0],plan=mealPlan[key]||{};
+  const dow=new Date(ds+'T12:00:00').getDay();
+  const used=recentMealIds();if(plan[ds])used.add(plan[ds]);
+  const prev=fmtD(addDays(new Date(ds+'T12:00:00'),-1));
+  const id=pickMeal((dow===0||dow===6)?'weekend':'weekday',used,plan[prev]?mealBank[plan[prev]]?.protein:null);
+  if(!id||id===plan[ds]){alert('No other meals fit — add more to the Meal Bank!');return;}
+  db.ref('/mealPlan/'+key+'/'+ds).set(id);
+}
+function mbReshuffle(){
+  const key=getWeekDates(0)[0];
+  db.ref('/mealPlan/'+key).set(buildWeekPlan());
+}
+
+// ---- Meal Bank overlay ----
+function openMealBank(){document.getElementById('mb-ov').classList.add('open');renderMealBank();}
+function closeMealBank(){document.getElementById('mb-ov').classList.remove('open');}
+function renderMealBank(){
+  const el=document.getElementById('mb-inner');if(!el)return;
+  const entries=Object.entries(mealBank).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||''));
+  el.innerHTML=`
+    <div style="padding:14px 16px 0">
+      <button class="btn btn-p btn-full" data-act="mbAdd">+ Add a Meal</button>
+      <div style="font-size:12px;color:var(--mut);margin:10px 2px 4px">${entries.length} meals · season now: ${SEASON_OPTS.find(s=>s.id===getSeason())?.label||getSeason()} · tap a meal to edit</div>
+    </div>
+    <div style="padding:6px 16px 24px">
+      ${entries.map(([id,m])=>`
+        <div style="display:flex;align-items:center;gap:10px;background:var(--sur);border:1.5px solid var(--bor);border-radius:12px;padding:10px 12px;margin-bottom:8px;${m.active===false?'opacity:.45;':''}">
+          <div style="flex:1;cursor:pointer" data-act="mbEdit" data-id="${id}">
+            <div style="font-weight:700;font-size:15px;color:var(--txt)">${PM[m.protein]?.emoji||'🍽️'} ${esc(m.name)}</div>
+            <div style="font-size:11px;color:var(--mut);margin-top:2px">${WHEN_OPTS.find(w=>w.id===m.when)?.label||m.when}${m.season&&m.season!=='all'?' · '+(SEASON_OPTS.find(s=>s.id===m.season)?.label||m.season):''}${m.active===false?' · paused':''}</div>
+          </div>
+          <button data-act="mbToggle" data-id="${id}" style="border:none;background:none;font-size:18px;cursor:pointer" title="${m.active===false?'Resume suggesting':'Pause suggesting'}">${m.active===false?'▶️':'⏸️'}</button>
+        </div>`).join('')}
+    </div>`;
+}
+function mbChip(sel,act,opts,cur){
+  return `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">${opts.map(o=>`<button data-act="${act}" data-v="${o.id}" class="fchip ${cur===o.id?'active':''}" style="cursor:pointer">${o.emoji?o.emoji+' ':''}${o.label}</button>`).join('')}</div>`;
+}
+function openMbForm(id){
+  editingMbId=id||null;
+  const m=id?mealBank[id]:null;
+  mbFormProt=m?m.protein:'chicken';mbFormWhen=m?m.when:'weekday';mbFormSeason=(m&&m.season)||'all';
+  document.getElementById('m-title').textContent=id?'Edit Meal':'Add a Meal';
+  document.getElementById('m-body').innerHTML=`
+    <label class="fl">Meal name</label>
+    <input type="text" class="fi" id="mb-name" value="${esc(m?m.name:'')}" placeholder="e.g. Pot Pie" style="width:100%;margin-bottom:14px;font-size:15px">
+    <label class="fl">Protein</label><div id="mb-prot">${mbChip('prot','mbProt',PROTEINS,mbFormProt)}</div>
+    <label class="fl">When to suggest</label><div id="mb-when">${mbChip('when','mbWhen',WHEN_OPTS,mbFormWhen)}</div>
+    <label class="fl">Season</label><div id="mb-season">${mbChip('season','mbSeason',SEASON_OPTS,mbFormSeason)}</div>
+    <button class="btn btn-p btn-full" data-act="mbSave">💾 Save Meal</button>
+    ${id?`<button class="btn btn-d btn-full" data-act="mbDel" data-id="${id}" style="margin-top:8px">🗑️ Delete Meal</button>`:''}
+    <div style="height:8px"></div>`;
+  showModal();
+}
+function saveMbForm(){
+  const name=document.getElementById('mb-name').value.trim();
+  if(!name){alert('Enter a meal name.');return;}
+  const id=editingMbId||('mb_'+Date.now());
+  const prev=editingMbId?mealBank[editingMbId]:null;
+  db.ref('/mealBank/'+id).set({name,protein:mbFormProt,when:mbFormWhen,season:mbFormSeason,active:prev?prev.active!==false:true});
+  closeModal();setTimeout(renderMealBank,150);
+}
+
+// ---- delegated actions (safe data-* pattern for all new UI) ----
+const ACTIONS={
+  mbAccept:d=>mbAcceptDay(d.ds),
+  mbSwap:d=>mbSwapDay(d.ds),
+  mbReshuffle:()=>mbReshuffle(),
+  mbOpen:()=>openMealBank(),
+  mbClose:()=>closeMealBank(),
+  mbAdd:()=>openMbForm(null),
+  mbEdit:d=>openMbForm(d.id),
+  mbSave:()=>saveMbForm(),
+  mbDel:d=>{if(confirm('Delete "'+(mealBank[d.id]?.name||'this meal')+'" from the bank?')){db.ref('/mealBank/'+d.id).remove();closeModal();setTimeout(renderMealBank,150);}},
+  mbToggle:d=>{const m=mealBank[d.id];if(m)db.ref('/mealBank/'+d.id+'/active').set(m.active===false);},
+  mbProt:d=>{mbFormProt=d.v;document.getElementById('mb-prot').innerHTML=mbChip('prot','mbProt',PROTEINS,mbFormProt);},
+  mbWhen:d=>{mbFormWhen=d.v;document.getElementById('mb-when').innerHTML=mbChip('when','mbWhen',WHEN_OPTS,mbFormWhen);},
+  mbSeason:d=>{mbFormSeason=d.v;document.getElementById('mb-season').innerHTML=mbChip('season','mbSeason',SEASON_OPTS,mbFormSeason);},
+};
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act]');if(!t)return;
+  const fn=ACTIONS[t.dataset.act];
+  if(fn){e.preventDefault();fn(t.dataset,t,e);}
+});
+
+// ============================================================
 // DASHBOARD
 // ============================================================
 function renderDash(){
@@ -606,6 +862,7 @@ function renderDash(){
       <span style="font-size:14px;font-weight:700;color:var(--pri)">🌱 Starter: ${ss.emoji} ${ss.label}</span>
       <button onclick="openStarter()" style="border:none;background:none;font-size:13px;font-weight:700;color:var(--acc);cursor:pointer">Manage →</button>
     </div>`:''}
+    ${smartMenuHtml()}
     <div class="shdr">
       <span class="stitle">This Week</span>
       <button onclick="nav('calendar')" style="border:none;background:none;font-size:13px;font-weight:700;color:var(--acc);cursor:pointer">Full Calendar →</button>
@@ -2300,6 +2557,10 @@ function openTimerRunning(){
 // ============================================================
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('fab').style.display='none';
+  if(hydrateMirror()){render();}
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
   let fbInited=false;
   firebase.auth().onAuthStateChanged(user=>{
     authUser=user;
